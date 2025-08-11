@@ -1,0 +1,435 @@
+html, body {
+  font-family: 'Poppins', sans-serif;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+
+#pageWrapper {
+  background: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+  position: relative;
+}
+.home-subtitle {
+  margin-top:0;
+}
+
+.home-container {
+  flex: 1;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 100px; /* ensures content isn't hidden behind nav */
+}
+
+
+
+.home-header {
+  position: relative;
+  overflow: visible; /* allow the wave to spill down */
+  padding-bottom: 0; /* give space for the wave curve */
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.action-section {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.welcome-text {
+  font-size: 18px;
+  color: #ffffff;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.user-name {
+  display: block;
+  font-weight: 700;
+  font-size: 22px;
+  color: #ffffff;
+}
+
+/* —— Stamp grid uses star icons instead of boxes —— */
+.stamp-grid {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.stampcup {
+  width: 40px;
+  height: 30px;
+  background: url('../public/images/free-grey.png') center/contain no-repeat;
+}
+
+/* Empty star icon only – no box */
+.stamp {
+  width: 24px;
+  height: 24px;
+  background-image: url('/images/star-empty.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.stamp {
+  transition: background-image 0.3s ease;
+}
+
+/* Filled star icon */
+.stamp.filled {
+  background: url('../public/images/star-filled.png') center/contain no-repeat;
+}
+
+.stamp-count {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  font-size: 18px;
+  font-weight: 700;
+  color: #4c0025;
+}
+
+.stamp-count span {
+  margin-right: 6px;
+}
+
+.stamp-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.stamp-progress {
+  display: flex;
+  align-items: center;
+}
+
+.stamp-progress .current {
+  font-size: 24px;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.stamp-progress .divider {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.action-section {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+#scanStatus {
+  text-align: center;
+  margin-top: 10px;
+  color: #91204D;
+  font-weight: 500;
+}
+
+.close-btn {
+  margin-top: 12px;
+  background: #ec008c;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.scan-button {
+  flex: 1;
+  background-color: #91204D;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  padding-left: 30px;
+  height: 130px;
+  
+}
+
+.qr-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+
+.qr-modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-modal-content img {
+  margin: 16px 0;
+  max-width: 220px;
+  height: auto;
+}
+
+.qr-modal-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+#qr-reader {
+  display: block;
+  margin: 0 auto;
+  width: 260px;
+  max-width: 90vw;
+  height: 260px;
+  border-radius: 10px;
+  background: #222;
+  object-fit: cover;
+}
+
+#qrStatus {
+  text-align: center;
+  font-size: 1.08rem;
+  margin: 18px 0 0 0;
+  color: #91204D;
+  font-weight: 600;
+}
+
+
+.use-btn {
+  width: 100%;
+  margin: 24px 0 24px 0;
+  display: block;
+  background: #B04D81;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 15px;
+  padding: 14px 0;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  height: 109px
+}
+
+.use-btn:enabled {
+  opacity: 1;
+}
+
+.use-btn:disabled {
+  background: #f5d9e2;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+
+.menu-btn {
+  flex: 1;
+  background-color: #af0161;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  padding-left: 30px;
+  height: 109px;
+    background: url(../public/images/canteen.jpg);
+  background-repeat: no-repeat;
+  background-size: cover; 
+  background-position: bottom 0px right 0px;
+}
+
+.page-slide-out-left {
+  animation: slideOutLeft 0.4s forwards;
+}
+
+@keyframes slideOutLeft {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* —— Beans Total card —— */
+.beans-card {
+  background: #B04D81;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  width: 100%;
+  height: 109px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.beans-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  letter-spacing: 0.5px;
+}
+
+.beans-visual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Beans Total number styling – big current, small total */
+/* Beans Total label outside the card */
+.beans-title-outside {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+
+.beans-count {
+  display: flex;
+  align-items: baseline;
+  font-weight: 700;
+  color: #ffffff;
+}
+.beans-count span:first-child {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+.beans-count span:last-child {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.beans-visual .stamp-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  flex: 1;
+  margin: 0 12px;
+}
+
+.beans-visual .stamp {
+  width: 40px;
+}
+
+.beans-visual .stamp.filled {
+  background-image: url('../public/images/star-filled.png');
+  background-size: 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.cup-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.history-link {
+  background: none;
+  border: none;
+  color: #af0161;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+}
+
+/* Add to styles/home.css */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px;
+  position: relative;
+}
+.close {
+  position: absolute; top: 10px; right: 20px; font-size: 2rem; cursor: pointer;
+}
+
+.button-text-container {
+  display: flex;
+  flex-direction: column; /* stacks children vertically */
+  align-items: center;    /* center horizontally */
+  gap: 0.2rem;            /* spacing between texts */
+  font-family: 'Poppins', sans-serif;
+}
+
+
+.collect-stamps-text {
+  font-size: 12px;
+  font-weight: 400;
+
+}
+
+.scan-at-till-text {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.top-background-block {
+  position: absolute; /* or fixed if you want it to stick on scroll */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 205px; /* fixed height */
+  background-color: #91204D; /* replace with your actual bg color */
+  z-index: -1; /* behind page content */
+}
+
+

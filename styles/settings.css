@@ -1,0 +1,93 @@
+.settings-container {
+  flex: 1;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-bottom: 100px; /* ensures content isn't hidden behind nav */
+  background-color: #fff;
+}
+
+.settings-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6f6f6f;
+  margin: 2rem 0 0.5rem;
+}
+
+.setting-option {
+  padding: 1rem 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #111;
+  border-bottom: 1px solid #ececec;
+}
+
+.settings-link {
+  padding: 1rem 0;
+  font-size: 16px;
+  border-bottom: 1px solid #eee; /* 👈 this creates the line */
+  cursor: pointer;
+}
+
+
+.settings-title {
+  color: #fff;
+}
+
+.sub-bar {
+  background-color: #a52c5c;
+  color: #fff;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+
+
+.version-text {
+  padding: 1rem 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.logout-wrapper {
+  margin-top: 2rem;
+  padding-bottom: 6rem;
+}
+
+.logout-button {
+  background-color: #91204D;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #c5346d;
+}
+
+/* Optional: tighten the spacing on mobile */
+@media (max-width: 500px) {
+  .settings-container {
+    padding: 1rem;
+  }
+
+  .setting-option {
+    font-size: 0.95rem;
+    padding: 0.9rem 0;
+  }
+
+  .logout-button {
+    font-size: 0.95rem;
+  }
+}

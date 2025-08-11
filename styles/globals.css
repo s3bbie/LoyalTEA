@@ -1,0 +1,204 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #91204D;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #91204D;
+  color: #fff;
+  padding: 18px 30px;
+  border-radius: 18px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 4px 24px rgba(145,32,77,0.22);
+  opacity: 0.97;
+  transition: opacity 0.3s;
+  width: 50%;
+  text-align: center;
+}
+
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color:#91204D;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 0;
+  border-top: 1px solid #ddd;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav-item img {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+  filter: hue-rotate(300deg) saturate(3) invert();
+}
+
+.nav-item span {
+  font-size: 12px;
+}
+
+.nav-item.active {
+  color: #ffffff;
+}
+
+.nav-item.active::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  bottom: -10px;
+}
+
+.nav-item.active img {
+  filter: hue-rotate(300deg) saturate(3) invert();
+}
+
+.nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  background: #ec008c;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.9em;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(145, 32, 77, 0.17);
+  pointer-events: none;
+}
+
+
+#rewardsNav {
+  position: relative;
+}
+
+
+.register-header-block {
+  padding: 24px 20px 16px;
+  text-align: center;
+}
+
+
+.register-heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  box-sizing: border-box;
+  gap: 12px;
+}
+
+/* Center wrapper inside */
+.form-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+
+/* Modal backdrop + card =Confirmation Dialog Design */
+/* Backdrop */
+.lt-modal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+
+/* Card */
+.lt-modal{
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.25);
+  animation: lt-modal-in .16s ease-out;
+}
+@keyframes lt-modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.lt-modal-title{
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.lt-modal-message{
+  margin: 0 0 18px;
+  color: #4a4a4a;
+  line-height: 1.45;
+}
+
+/* Actions */
+.lt-modal-actions{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 480px){
+  .lt-modal-actions{ grid-template-columns: 1fr 1fr; }
+}
+
+/* Buttons */
+.lt-btn{
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 44px; border-radius: 10px; border: 0; cursor: pointer;
+  font-weight: 600; padding: 0 14px;
+}
+.lt-btn-primary{
+  background: #91204D; color: #fff;
+  box-shadow: 0 6px 16px rgba(145,32,77,.25);
+}
+.lt-btn-primary:active{ transform: translateY(1px); }
+
+.lt-btn-secondary{
+  background: #f2f2f2; color: #222;
+}
