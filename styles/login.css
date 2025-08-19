@@ -145,3 +145,10 @@ input {
 .hidden {
   display: none !important;
 }
+
+.reCaptcha {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  padding: 24px;
+}

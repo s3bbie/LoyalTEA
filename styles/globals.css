@@ -202,3 +202,8 @@ body, html {
 .lt-btn-secondary{
   background: #f2f2f2; color: #222;
 }
+
+
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
