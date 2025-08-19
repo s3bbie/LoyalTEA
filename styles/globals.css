@@ -2,7 +2,7 @@ body, html {
   margin: 0;
   padding: 0;
   font-family: 'Poppins', sans-serif;
-  background-color: #91204D;
+  background-color: #cf067f;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -31,7 +31,7 @@ body, html {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color:#91204D;
+  background-color:#ec008c;
   border-radius: 20px 20px 0 0;
   padding: 20px 0;
   border-top: 1px solid #ddd;
@@ -139,7 +139,7 @@ body, html {
 }
 
 
-/* Modal backdrop + card =Confirmation Dialog Design */
+
 /* Backdrop */
 .lt-modal-backdrop{
   position: fixed; inset: 0;

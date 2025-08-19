@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding-bottom: 100px; /* ensures content isn't hidden behind nav */
+  padding-bottom: 100px; 
   background-color: #fff;
 }
 
@@ -28,7 +28,7 @@
 .settings-link {
   padding: 1rem 0;
   font-size: 16px;
-  border-bottom: 1px solid #eee; /* 👈 this creates the line */
+  border-bottom: 1px solid #eee; 
   cursor: pointer;
 }
 

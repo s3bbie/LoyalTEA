@@ -1,12 +1,18 @@
 import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
+  const isProd = process.env.NODE_ENV === "production";
+
   return (
-    <Html>
+    <Html lang="en">
       <Head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#91204D" />
-        <link rel="apple-touch-icon" href="/images/icon-192.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        {isProd && <link rel="manifest" href="/manifest.json" />}
       </Head>
       <body>
         <Main />

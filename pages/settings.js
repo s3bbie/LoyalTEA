@@ -138,7 +138,7 @@ function SettingsPage() {
         </div>
       </div>
 
-      {/* Confirm modals */}
+      
       <ConfirmDialog
         open={askReset}
         title="Reset password?"

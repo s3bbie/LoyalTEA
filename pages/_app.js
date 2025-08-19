@@ -6,7 +6,7 @@ import '@/styles/rewards.css';
 import '@/styles/settings.css';
 import BottomNav from '../components/BottomNav';
 import { useRouter } from 'next/router';
-import { Analytics } from '@vercel/analytics/react'; // ✅ correct import
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
-        {/* Load Poppins font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -27,7 +26,6 @@ export default function App({ Component, pageProps }) {
       <Component {...pageProps} />
       {showNav && <BottomNav />}
       
-      {/* Vercel Analytics at the bottom */}
       <Analytics />
     </>
   );

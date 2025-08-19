@@ -21,7 +21,7 @@ export default function withAuth(Component) {
       checkSession();
     }, []);
 
-    if (loading) return null; // prevent render flash
+    if (loading) return null; 
 
     return <Component {...props} />;
   };

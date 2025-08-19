@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [pending, setPending] = useState(null); // email/password to use after captcha
+  const [pending, setPending] = useState(null); 
   const captchaRef = useRef(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -20,7 +20,7 @@ export default function Login() {
 
     setPending({ email, password });
     setLoading(true);
-    await captchaRef.current.execute(); // triggers onVerify
+    await captchaRef.current.execute(); 
   };
 
   const onVerify = async (token) => {

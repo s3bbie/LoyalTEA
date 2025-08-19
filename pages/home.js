@@ -1,4 +1,3 @@
-// pages/home.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { supabase } from "../utils/supabaseClient";
@@ -120,7 +119,6 @@ const addStamp = async () => {
 
   const newCount = stampCount + 1;
 
-  // 1. Update stamp count in profiles
   const { error: profileError } = await supabase
     .from("profiles")
     .update({ stamp_count: newCount })
@@ -131,13 +129,12 @@ const addStamp = async () => {
     return;
   }
 
-  // 2. Insert stamp and track who scanned it
   const { error: insertError } = await supabase
     .from("stamps")
     .insert({
       user_id: userId,
       method: "QR",
-      scanned_by: userId, // ✅ this is new
+      scanned_by: userId, 
     });
 
   if (insertError) {
@@ -145,7 +142,6 @@ const addStamp = async () => {
     return;
   }
 
-  // 3. Update UI
   setStampCount(newCount);
 };
 
@@ -206,7 +202,6 @@ const addStamp = async () => {
           </div>
         </div>
 
-        {/* QR Scanner Modal */}
         {showQRModal && (
           <div className="qr-modal">
             <div className="qr-modal-content">

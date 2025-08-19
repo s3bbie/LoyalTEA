@@ -130,7 +130,7 @@ const { error: insertError } = await supabase.from("redeems").insert({
   type: selectedReward,
   count: 1,
   total: 1,
-  reward_id: rewardId, // ✅ Corrected here
+  reward_id: rewardId, 
   created_at: now,
 });
 

@@ -17,10 +17,10 @@ export default function ConfirmDialog({
     const onKey = (e) => {
       if (e.key === "Escape") onCancel?.();
     };
-    // prevent background scroll
+
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKey);
-    // focus the card for screen readers
+
     setTimeout(() => cardRef.current?.focus(), 0);
 
     return () => {

@@ -27,15 +27,15 @@ button, input, select, textarea {
   flex-direction: column;
   min-height: 100vh;
   overflow-y: auto;
-  padding-bottom: 100px; /* ensures content isn't hidden behind nav */
+  padding-bottom: 100px; 
 }
 
 
 
 .home-header {
   position: relative;
-  overflow: visible; /* allow the wave to spill down */
-  padding-bottom: 0; /* give space for the wave curve */
+  overflow: visible; 
+  padding-bottom: 0; 
   padding-top: 1rem;
   padding-bottom: 1rem;
 }
@@ -61,7 +61,7 @@ button, input, select, textarea {
   color: #ffffff;
 }
 
-/* —— Stamp grid uses star icons instead of boxes —— */
+/* Stamp grid */
 .stamp-grid {
   display: flex;
   gap: 8px;
@@ -294,7 +294,7 @@ button, input, select, textarea {
   }
 }
 
-/* —— Beans Total card —— */
+/* Beans Total card */
 .beans-card {
   background: #B04D81;
   border-radius: 15px;
@@ -321,7 +321,6 @@ button, input, select, textarea {
   justify-content: space-between;
 }
 
-/* Beans Total number styling – big current, small total */
 /* Beans Total label outside the card */
 .beans-title-outside {
   font-size: 0.9rem;
@@ -385,7 +384,6 @@ button, input, select, textarea {
   width: 100%;
 }
 
-/* Add to styles/home.css */
 .modal {
   position: fixed;
   z-index: 1000;
@@ -403,9 +401,9 @@ button, input, select, textarea {
 
 .button-text-container {
   display: flex;
-  flex-direction: column; /* stacks children vertically */
-  align-items: center;    /* center horizontally */
-  gap: 0.2rem;            /* spacing between texts */
+  flex-direction: column; 
+  align-items: center;    
+  gap: 0.2rem;            
   font-family: 'Poppins', sans-serif;
 }
 
@@ -423,13 +421,13 @@ button, input, select, textarea {
 }
 
 .top-background-block {
-  position: absolute; /* or fixed if you want it to stick on scroll */
+  position: absolute; 
   top: 0;
   left: 0;
   width: 100%;
-  height: 205px; /* fixed height */
-  background-color: #91204D; /* replace with your actual bg color */
-  z-index: -1; /* behind page content */
+  height: 205px; 
+  background-color: #91204D; 
+  z-index: -1; 
 }
 
 
