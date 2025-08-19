@@ -99,14 +99,16 @@ const doResetPassword = async () => {
         </section>
 
         <section>
-          <h2 className="settings-section-title">Support</h2>
+          <h2 className="settings-section-title">Support and legal</h2>
           <div className="setting-option">Contact Us</div>
+          <div className="setting-option">Terms & conditions</div>
+          <div className="setting-option">Privacy Policy</div>
           <div className="setting-option" onClick={() => setAskDelete(true)}>Delete Account</div>
         </section>
 
         <section>
           <h2 className="settings-section-title">Version</h2>
-          <p className="version-text">Web App Version: {packageInfo.version}</p>
+          <p className="version-text"> {packageInfo.version}</p>
         </section>
 
         <div className="logout-wrapper">
@@ -143,7 +145,6 @@ const doResetPassword = async () => {
         onCancel={() => setAskDelete(false)}
       />
 
-      <BottomNav />
     </>
   );
 }

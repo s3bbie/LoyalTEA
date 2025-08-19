@@ -1,6 +1,6 @@
 .settings-container {
   flex: 1;
-  padding: 20px;
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -9,12 +9,16 @@
   background-color: #fff;
 }
 
+.settings-container section {
+  padding: 0 0 0 1rem;
+}
+
 .settings-section-title {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  text-transform: uppercase;
-  color: #6f6f6f;
+  color: #c10676;
   margin: 2rem 0 0.5rem;
+  border-bottom: 1px solid #ececec;
 }
 
 .setting-option {
@@ -46,17 +50,14 @@
   font-weight: 500;
 }
 
-
-
 .version-text {
-  padding: 1rem 0;
   font-size: 0.95rem;
   color: #444;
 }
 
 .logout-wrapper {
   margin-top: 2rem;
-  padding-bottom: 6rem;
+  padding: 0 1rem 0 1rem;
 }
 
 .logout-button {
@@ -79,7 +80,7 @@
 /* Optional: tighten the spacing on mobile */
 @media (max-width: 500px) {
   .settings-container {
-    padding: 1rem;
+    position: relative;
   }
 
   .setting-option {
