@@ -236,7 +236,7 @@ button, input, select, textarea {
   width: 100%;
   margin: 24px 0 24px 0;
   display: block;
-  background: #B04D81;
+  background: #951662;
   color: #fff;
   font-size: 1.1rem;
   font-weight: 700;
@@ -296,7 +296,7 @@ button, input, select, textarea {
 
 /* Beans Total card */
 .beans-card {
-  background: #B04D81;
+  background: #951662;
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   width: 100%;
@@ -426,7 +426,7 @@ button, input, select, textarea {
   left: 0;
   width: 100%;
   height: 205px; 
-  background-color: #91204D; 
+  background-color: #cf067f; 
   z-index: -1; 
 }
 

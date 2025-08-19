@@ -1,7 +1,7 @@
 /* Rewards Page Scoped Styles */
 
 .rewards-page .rewards-banner {
-  background: #91204D;
+  background: #cf067f;
   color: #fff;
   padding: 32px 0 16px 0;
   text-align: center;
@@ -36,7 +36,7 @@
 .rewards-page #emptyStateMsg {
   padding: 30px;
   text-align: center;
-  color: #91204D;
+  color: #cf067f;
   font-weight: 600;
 }
 
@@ -145,7 +145,7 @@
 .rewards-page .use-btn {
   margin: 24px auto;
   display: block;
-  background: #af0161;
+  background: #951662;
   color: #fff;
   font-size: 1.1rem;
   font-weight: 600;

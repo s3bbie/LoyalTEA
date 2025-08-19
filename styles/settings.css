@@ -38,7 +38,7 @@
 }
 
 .sub-bar {
-  background-color: #a52c5c;
+  background-color: #c10676;
   color: #fff;
   text-align: center;
   padding: 0.75rem 1rem;
@@ -60,7 +60,7 @@
 }
 
 .logout-button {
-  background-color: #91204D;
+  background-color: #c10676;
   color: white;
   border: none;
   border-radius: 8px;
@@ -73,7 +73,7 @@
 }
 
 .logout-button:hover {
-  background-color: #c5346d;
+  background-color: #c10676;
 }
 
 /* Optional: tighten the spacing on mobile */
