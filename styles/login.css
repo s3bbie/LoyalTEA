@@ -100,7 +100,7 @@ input {
 
 /* Sticky sign-up prompt */
 .signup-prompt {
-  margin-top: auto;
+  margin-top: 32px;
   margin-bottom: 32px;
   text-align: center;
   font-size: 0.875rem;
