@@ -6,33 +6,27 @@ import BottomNav from "../components/BottomNav";
 import withAuth from "../utils/withAuth";
 import packageInfo from "../package.json";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 function SettingsPage() {
   const [firstName, setFirstName] = useState("...");
   const [askReset, setAskReset] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
-
     const run = async () => {
       const { data } = await supabase.auth.getUser();
       const userId = data?.user?.id;
       if (!userId) return;
-
       const key = `firstName:${userId}`;
       const cached = localStorage.getItem(key);
       if (cached && !cancelled) setFirstName(cached);
-
       const { data: profile, error } = await supabase
         .from("profiles")
         .select("first_name")
         .eq("id", userId)
         .single();
-
       if (!cancelled) {
         if (!error && profile?.first_name) {
           setFirstName(profile.first_name);
@@ -43,11 +37,8 @@ function SettingsPage() {
         }
       }
     };
-
     run();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const clearUserCaches = async () => {
@@ -56,36 +47,33 @@ function SettingsPage() {
     if (userId) localStorage.removeItem(`firstName:${userId}`);
   };
 
-  const doResetPassword = async () => {
-    setAskReset(false);
+const doResetPassword = async () => {
+  setAskReset(false);
+  const { data } = await supabase.auth.getUser();
+  const email = data?.user?.email;
+  if (!email) return alert("No email associated with this account.");
+  const redirectTo = `${window.location.origin}/update-password.html`;
 
-    if (!captchaToken) {
-      alert("Please complete the captcha before continuing.");
-      return;
-    }
-
-    const { data } = await supabase.auth.getUser();
-    const email = data?.user?.email;
-    if (!email) return alert("No email associated with this account.");
-
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/update-password.html`
-        : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") +
-          "/update-password.html";
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
-      captchaToken,
+  grecaptcha.ready(() => {
+    grecaptcha.execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY, { action: "reset" }).then(async (recaptchaToken) => {
+      const v = await fetch("/api/recaptcha-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recaptchaToken, expectedAction: "reset" }),
+      });
+      if (!v.ok) {
+        const { error } = await v.json().catch(() => ({ error: "Captcha failed" }));
+        alert(error || "Captcha failed");
+        return;
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) alert(error.message || "Something went wrong.");
+      else alert("A password reset link has been sent to your email.");
     });
+  });
+};
 
-    if (error) {
-      alert(error.message || "Something went wrong. Please try again.");
-    } else {
-      alert("A password reset link has been sent to your email.");
-      setCaptchaToken("");
-    }
-  };
+
 
   const doDeleteAccount = async () => {
     setAskDelete(false);
@@ -96,10 +84,7 @@ function SettingsPage() {
 
   return (
     <>
-      <Head>
-        <title>Settings</title>
-
-      </Head>
+      <Head><title>Settings</title></Head>
 
       <header className="register-header-block">
         <h1 className="settings-title">Hi, <span>{firstName || "there"}</span></h1>
@@ -138,21 +123,10 @@ function SettingsPage() {
         </div>
       </div>
 
-      
       <ConfirmDialog
         open={askReset}
         title="Reset password?"
-        message={
-          <>
-            We’ll email a secure link to reset your password.
-            <div style={{ marginTop: "1rem" }}>
-              <HCaptcha
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY}
-                onVerify={(token) => setCaptchaToken(token)}
-              />
-            </div>
-          </>
-        }
+        message="We’ll email a secure link to reset your password."
         confirmText="Send link"
         cancelText="Cancel"
         onConfirm={doResetPassword}

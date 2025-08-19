@@ -7,7 +7,7 @@ import styles from "@/styles/verify-email.module.css";
 
 export default function VerifyEmail() {
   const router = useRouter();
-  const [status, setStatus] = useState("waiting"); // 'waiting' | 'verified' | 'resent' | 'error'
+  const [status, setStatus] = useState("waiting"); 
   const [message, setMessage] = useState("");
   const [emailInput, setEmailInput] = useState("");
 
