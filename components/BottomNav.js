@@ -6,6 +6,7 @@ export default function BottomNav() {
 
   const tabs = [
     { href: "/home", label: "Home", icon: "/images/home.svg" },
+    { href: "/menu", label: "Menu", icon: "/images/menu.svg" },
     { href: "/rewards", label: "Rewards", icon: "/images/rewards.svg" },
     { href: "/settings", label: "Settings", icon: "/images/settings.svg" },
   ];
