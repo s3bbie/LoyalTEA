@@ -254,3 +254,31 @@ body, html {
   line-height: 1;
   z-index: 1000;
 }
+
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  background: #cf067f; /* brand pink */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  transition: opacity 0.5s ease;
+}
+
+.splash-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo {
+  width: 160px;
+  height: auto;
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.9; }
+}
