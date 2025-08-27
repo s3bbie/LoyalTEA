@@ -3,15 +3,16 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import { supabase } from "../utils/supabaseClient";
 import QrScanner from "qr-scanner";
-import withAuth from "../utils/withAuth";
+import jwt from "jsonwebtoken";
+import * as cookie from "cookie";
+import BottomNav from "../components/BottomNav"; // 👈 import the nav
 
 let scannerInstance = null;
 let scanHandled = false;
 
-function RewardsPage() {
+function RewardsPage({ user }) {
   const [stampCount, setStampCount] = useState(0);
   const [selectedReward, setSelectedReward] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [scanStatus, setScanStatus] = useState("");
 
@@ -30,27 +31,26 @@ function RewardsPage() {
     { title: "Chai Latte", subtitle: "Spiced & aromatic", value: "Chai Latte", image: "/images/drinks/chailatte.jpg" }
   ];
 
+  // fetch user's stamp count
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: session } = await supabase.auth.getUser();
-      if (!session?.user) return (window.location.href = "/");
-
-      const id = session.user.id;
-      setUserId(id);
-
-      const { data: profile } = await supabase
-        .from("profiles")
+    const fetchStampCount = async () => {
+      const { data, error } = await supabase
+        .from("users")
         .select("stamp_count")
-        .eq("id", id)
+        .eq("id", user.sub)
         .single();
 
-      setStampCount(profile?.stamp_count || 0);
+      if (!error && data) {
+        setStampCount(data.stamp_count || 0);
+      } else {
+        console.error("⚠️ Error fetching stamp count:", error?.message);
+      }
     };
 
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
+    fetchStampCount();
+    const interval = setInterval(fetchStampCount, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user.sub]);
 
   const generateTodayHash = async () => {
     const today = new Date().toISOString().slice(0, 10);
@@ -105,66 +105,61 @@ function RewardsPage() {
     scannerInstance.start();
   };
 
-const redeemReward = async () => {
-  const now = new Date().toISOString();
+  const redeemReward = async () => {
+    const now = new Date().toISOString();
 
-  console.log("Looking for reward_name =", selectedReward);
+    const { data: rewardData, error: rewardFetchError } = await supabase
+      .from("reward_prices")
+      .select("id")
+      .eq("reward_name", selectedReward.trim())
+      .maybeSingle();
 
-  const { data: rewardData, error: rewardFetchError } = await supabase
-    .from("reward_prices")
-    .select("id")
-    .eq("reward_name", selectedReward.trim())
-    .maybeSingle();
+    if (rewardFetchError || !rewardData) {
+      console.error("Reward lookup failed:", rewardFetchError);
+      setScanStatus("Could not find reward ID.");
+      return;
+    }
 
-  if (rewardFetchError || !rewardData) {
-    console.error("Reward lookup failed:", rewardFetchError);
-    setScanStatus("Could not find reward ID.");
-    return;
-  }
+    const rewardId = rewardData.id;
 
-const rewardId = rewardData.id;
-console.log("✅ Found reward ID:", rewardId);
+    const { error: insertError } = await supabase.from("redeems").insert({
+      user_id: user.sub,
+      type: selectedReward,
+      count: 1,
+      total: 1,
+      reward_id: rewardId,
+      created_at: now,
+    });
 
-const { error: insertError } = await supabase.from("redeems").insert({
-  user_id: userId,
-  type: selectedReward,
-  count: 1,
-  total: 1,
-  reward_id: rewardId, 
-  created_at: now,
-});
+    if (insertError) {
+      console.error("Redeem insert failed:", insertError);
+      setScanStatus("Failed to redeem. Please try again.");
+      return;
+    }
 
+    // reduce stamps
+    const newCount = Math.max(stampCount - 9, 0);
+    const { error: updateErr } = await supabase
+      .from("users")
+      .update({ stamp_count: newCount })
+      .eq("id", user.sub);
 
-  if (insertError) {
-    console.error("Redeem insert failed:", insertError);
-    setScanStatus("Failed to redeem. Please try again.");
-    return;
-  }
+    if (updateErr) {
+      console.error("⚠️ Failed to update stamps:", updateErr.message);
+      return;
+    }
 
-  const { data: profileData } = await supabase
-    .from("profiles")
-    .select("stamp_count")
-    .eq("id", userId)
-    .single();
+    setStampCount(newCount);
+    setScanStatus(`Reward redeemed: ${selectedReward}!`);
 
-  const current = profileData?.stamp_count || 0;
-  const newCount = Math.max(current - 9, 0);
-
-  await supabase.from("profiles").update({ stamp_count: newCount }).eq("id", userId);
-
-  setStampCount(newCount);
-  setScanStatus(`Reward redeemed: ${selectedReward}!`);
-
-  const sound = document.getElementById("rewardSound");
-  if (sound) sound.play();
-};
-
+    const sound = document.getElementById("rewardSound");
+    if (sound) sound.play();
+  };
 
   return (
     <>
       <Head>
         <title>LoyalTEA – Rewards</title>
-
       </Head>
 
       <div id="pageWrapper" className="rewards-page">
@@ -222,9 +217,29 @@ const { error: insertError } = await supabase.from("redeems").insert({
         )}
 
         <audio id="rewardSound" src="/sounds/redeem.mp3" preload="auto"></audio>
+
+        {/* 👇 add the nav at the bottom */}
+        <BottomNav stampCount={stampCount} />
       </div>
     </>
   );
 }
 
-export default withAuth(RewardsPage);
+// ✅ Protect with JWT in cookie
+export async function getServerSideProps({ req }) {
+  const cookies = cookie.parse(req.headers.cookie || "");
+  const token = cookies.token || null;
+
+  if (!token) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return { props: { user: decoded } };
+  } catch (err) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+}
+
+export default RewardsPage;

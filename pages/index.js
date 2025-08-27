@@ -1,67 +1,58 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
-import { supabase } from "../utils/supabaseClient";
 import Link from "next/link";
 import Script from "next/script";
+
 
 export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value;
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    grecaptcha.ready(() => {
-      grecaptcha
-        .execute(process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY, { action: "login" })
-        .then(async (recaptchaToken) => {
-          const v = await fetch("/api/recaptcha-verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ recaptchaToken, expectedAction: "login" }),
-          });
-          if (!v.ok) {
-            const { error } = await v.json().catch(() => ({ error: "Captcha failed" }));
-            setLoading(false);
-            alert(error || "Captcha failed");
-            return;
-          }
+  const username = e.target.username.value.trim();
+  const pin = e.target.pin.value.trim();
 
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          setLoading(false);
-          if (error) {
-            alert(error.message || "Login failed");
-            return;
-          }
-          router.push("/home");
-        });
-    });
-  };
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, pin }),
+  });
+
+  setLoading(false);
+
+  if (!res.ok) {
+    const { error } = await res.json();
+    alert(error || "Login failed");
+    return;
+  }
+
+  router.push("/home");
+};
+
 
   return (
     <>
       <Head><title>Login – LoyalTEA</title></Head>
-      <Script src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY}`} strategy="afterInteractive" />
+      <Script src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY}`} />
       <div className="auth-container login">
-        {loading && <div className="loading-overlay"><div className="spinner" /></div>}
         <div className="form-wrapper">
           <div className="logo">
             <img src="/images/logo.png" alt="LoyalTEA Logo" />
           </div>
 
-          <form id="loginForm" className="auth-form" onSubmit={handleLogin}>
+          <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">
-              <label htmlFor="email">Email address</label>
-              <input type="email" id="email" name="email" placeholder="name@domain.com" required />
+              <label htmlFor="username">Username</label>
+              <input type="text" id="username" name="username" required />
             </div>
 
-            <div className="form-group password-group">
-              <label htmlFor="loginPassword">Password</label>
-              <input type="password" id="loginPassword" name="password" placeholder="••••••••" required autoComplete="current-password" />
+            <div className="form-group">
+              <label htmlFor="pin">PIN</label>
+              <input type="password" id="pin" name="pin" required />
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
@@ -72,14 +63,7 @@ export default function Login() {
           <p className="signup-prompt">
             Not a member? <Link href="/register">Sign up</Link>
           </p>
-
-          
         </div>
-
-        <p className="reCaptcha">
-            This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.
-        </p>
-
       </div>
     </>
   );

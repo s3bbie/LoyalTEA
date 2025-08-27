@@ -1,27 +1,15 @@
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { supabase } from "./supabaseClient";
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { getToken } from './auth';
 
 export default function withAuth(Component) {
-  return function ProtectedRoute(props) {
+  return function Guarded(props) {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      const checkSession = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
-          router.push("/");
-        } else {
-          setLoading(false);
-        }
-      };
-
-      checkSession();
-    }, []);
-
-    if (loading) return null; 
+      const token = getToken();
+      if (!token) router.replace('/login');
+    }, [router]);
 
     return <Component {...props} />;
   };

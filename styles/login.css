@@ -88,10 +88,10 @@ input {
 
 /* Legal text */
 .legal-text {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: center;
-  margin: 8px 0;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    padding: 24px;
 }
 .legal-text a {
   color: #F7F5EA;

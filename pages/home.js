@@ -1,58 +1,62 @@
+// pages/home.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { supabase } from "../utils/supabaseClient";
 import BottomNav from "../components/BottomNav";
-import withAuth from "../utils/withAuth";
 import QrScanner from "qr-scanner";
+import jwt from "jsonwebtoken";
+import * as cookie from "cookie";
+import { useRouter } from "next/router";
+import { supabase } from "../utils/supabaseClient";
 
 let scannerInstance = null;
 let scanHandled = false;
 
-function Home() {
-  const [userName, setUserName] = useState("");
+function IntroModal({ onClose }) {
+  return (
+    <div className="intro-overlay">
+      <div className="intro-content">
+        <h2>Welcome to LoyalTEA ☕</h2>
+        <p>
+          Collect stamps every time you buy at the canteen. Once you reach 9, redeem a free drink 🎉
+        </p>
+        <button className="btn-primary" onClick={onClose}>Got it!</button>
+      </div>
+    </div>
+  );
+}
+
+function Home({ user }) {
+  const router = useRouter();
   const [stampCount, setStampCount] = useState(0);
-  const [userId, setUserId] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const [scanStatus, setScanStatus] = useState("");
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (!localStorage.getItem("introSeen")) {
+      setShowIntro(true);
+    }
 
-      if (!user) return;
-
-      setUserId(user.id);
-
+    const fetchStampCount = async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("first_name, stamp_count")
-        .eq("id", user.id)
+        .from("users")
+        .select("stamp_count")
+        .eq("id", user.sub)
         .single();
 
       if (!error && data) {
-        setUserName(data.first_name || "Friend");
         setStampCount(data.stamp_count || 0);
+      } else {
+        console.error("⚠️ Error loading stamp count:", error?.message);
       }
     };
 
-    fetchUserData();
-  }, []);
+    fetchStampCount();
+  }, [user.sub]);
 
-  const loadStampCount = async () => {
-    if (!userId) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("stamp_count")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("Error loading profile stamp count:", error.message);
-    } else {
-      setStampCount(data.stamp_count || 0);
-    }
+  const handleCloseIntro = () => {
+    localStorage.setItem("introSeen", "true");
+    setShowIntro(false);
   };
 
   const generateTodayHash = async () => {
@@ -67,11 +71,6 @@ function Home() {
   };
 
   const handleShowQRCode = async () => {
-    if (!userId) {
-      alert("User ID not ready yet.");
-      return;
-    }
-
     setShowQRModal(true);
     scanHandled = false;
 
@@ -87,18 +86,18 @@ function Home() {
         try {
           data = JSON.parse(result.data);
         } catch {
-          alert("Invalid QR code.");
+          setScanStatus("Invalid QR code.");
           return;
         }
 
         if (data.type === "staff" && data.code === todayHash) {
           scanHandled = true;
           await addStamp();
-          alert("Stamp added!");
+          setScanStatus("✅ Stamp added!");
           scannerInstance.stop();
-          setShowQRModal(false);
+          setTimeout(() => setShowQRModal(false), 1200);
         } else {
-          alert("Invalid staff QR.");
+          setScanStatus("Invalid staff QR.");
         }
       },
       {
@@ -111,46 +110,30 @@ function Home() {
     scannerInstance.start();
   };
 
-const addStamp = async () => {
-  if (stampCount >= 9) {
-    alert("You already have 9 stamps. Please redeem your free drink before collecting more.");
-    return;
-  }
+  const addStamp = async () => {
+    if (stampCount >= 9) {
+      alert("You already have 9 stamps. Please redeem your free drink before collecting more.");
+      return;
+    }
 
-  const newCount = stampCount + 1;
+    const newCount = stampCount + 1;
 
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({ stamp_count: newCount })
-    .eq("id", userId);
+    const { error: updateErr } = await supabase
+      .from("users")
+      .update({ stamp_count: newCount })
+      .eq("id", user.sub);
 
-  if (profileError) {
-    console.error("Error updating profile stamp count:", profileError.message);
-    return;
-  }
+    if (updateErr) {
+      console.error("⚠️ Error updating stamp count:", updateErr.message);
+      return;
+    }
 
-  const { error: insertError } = await supabase
-    .from("stamps")
-    .insert({
-      user_id: userId,
-      method: "QR",
-      scanned_by: userId, 
-    });
-
-  if (insertError) {
-    console.error("Error inserting stamp:", insertError.message);
-    return;
-  }
-
-  setStampCount(newCount);
-};
-
+    setStampCount(newCount);
+  };
 
   return (
     <>
-      <Head>
-        <title>Home – LoyalTEA</title>
-      </Head>
+      <Head><title>Home – LoyalTEA</title></Head>
 
       <div id="pageWrapper">
         <div className="home-container">
@@ -158,72 +141,90 @@ const addStamp = async () => {
 
           <div className="home-header">
             <p className="welcome-text">
-              Hi,<span className="user-name"> {userName}</span>
+              Hi,<span className="user-name"> {user.username}</span>
             </p>
           </div>
 
           <h2 className="beans-title-outside">Total Stamps</h2>
-<div className="action-section">
-
-          <section className="beans-card">
-            <div className="beans-visual">
-              <div className="beans-count">
-                <span>{stampCount}</span>/<span>9</span>
-              </div>
-              <div className="stamp-grid" id="stampGrid">
-                {[...Array(9)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`stamp ${i < stampCount ? "filled" : ""}`}
-                  ></div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          </div>
-
-<div className="action-section">
-  <button className="use-btn" onClick={handleShowQRCode}>
-    <div className="button-text-container">
-      <span className="collect-stamps-text">Collect Stamps</span>
-      <span className="scan-at-till-text">Scan at till</span>
-    </div>
-  </button>
-</div>
-
-
-          
 
           <div className="action-section">
-            <button className="menu-btn" id="menuBtn">
-              Canteen Menu
+            <section className="beans-card">
+              <div className="beans-visual">
+                <div className="beans-count">
+                  <span>{stampCount}</span>/<span>9</span>
+                </div>
+                <div className="stamp-grid" id="stampGrid">
+                  {[...Array(9)].map((_, i) => (
+                    <div key={i} className={`stamp ${i < stampCount ? "filled" : ""}`} />
+                  ))}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="action-section">
+            <button className="use-btn" onClick={handleShowQRCode}>
+              <div className="button-text-container">
+                <span className="collect-stamps-text">Collect Stamps</span>
+                <span className="scan-at-till-text">Scan at till</span>
+              </div>
             </button>
+          </div>
+
+          <div className="action-section">
+            <button className="menu-btn" id="menuBtn">Canteen Menu</button>
           </div>
         </div>
 
-        {showQRModal && (
-          <div className="qr-modal">
-            <div className="qr-modal-content">
-              <p className="qr-modal-header">Scan Staff QR</p>
-              <video id="qr-reader" playsInline></video>
-              <button
-                className="close-btn"
-                onClick={() => {
-                  if (scannerInstance) scannerInstance.stop();
-                  setShowQRModal(false);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+{showQRModal && (
+  <div className="qr-fullscreen">
+    <button
+      className="qr-close-x"
+      onClick={() => {
+        if (scannerInstance) scannerInstance.stop();
+        setShowQRModal(false);
+      }}
+    >
+      ✖
+    </button>
+    <video id="qr-reader" playsInline autoPlay muted></video>
+    <div className="qr-overlay">
+      <p>{scanStatus}</p>
+      <button
+        className="close-btn"
+        onClick={() => {
+          if (scannerInstance) scannerInstance.stop();
+          setShowQRModal(false);
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
 
-        <BottomNav />
+
+        {showIntro && <IntroModal onClose={handleCloseIntro} />}
+        <BottomNav stampCount={stampCount} />
       </div>
     </>
   );
 }
 
-export default withAuth(Home);
+export async function getServerSideProps({ req }) {
+  const cookies = cookie.parse(req.headers.cookie || "");
+  const token = cookies.token || null;
+
+  if (!token) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return { props: { user: decoded } };
+  } catch (err) {
+    return { redirect: { destination: "/", permanent: false } };
+  }
+}
+
+export default Home;

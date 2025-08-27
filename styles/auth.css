@@ -1,0 +1,39 @@
+/* Center the main block between top and bottom while keeping the bottom fixed */
+.main-block {
+  margin: auto 0;                  /* vertical auto margins center it in a flex column */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Optional: ensure the form isn’t too wide */
+.main-block .auth-form {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Fallback title styling if logo image is missing */
+.logo-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Error style (if not already present) */
+.alert {
+  background: rgba(255, 95, 95, 0.20);
+  border: 1px solid rgba(255, 95, 95, 0.40);
+  color: #ffecec;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff; /* white, same as original labels */
+}

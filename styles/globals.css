@@ -2,7 +2,7 @@ body, html {
   margin: 0;
   padding: 0;
   font-family: 'Poppins', sans-serif;
-  background-color: #cf067f;
+  background-color: #a91c71;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -38,7 +38,7 @@ body, html {
   bottom: 0;
   left: 0;
   width: 100%;
-  z-index: 10;
+  z-index: 0;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
 }
 
@@ -211,4 +211,46 @@ body, html {
 
 .grecaptcha-badge {
   visibility: hidden !important;
+}
+
+
+.pin-warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.pin-warning-box input[type="checkbox"] {
+  margin-right: 10px;
+  margin-top: 2px;
+  transform: scale(1.2);
+}
+
+.pin-warning-box span {
+  line-height: 1.4;
+}
+
+.icon-wrapper {
+  position: relative; /* anchor point for the badge */
+  display: inline-block;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;   /* move up */
+  right: -6px; /* move right */
+  background: #ec008c;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 50%;
+  line-height: 1;
+  z-index: 1000;
 }
