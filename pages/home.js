@@ -30,7 +30,7 @@ function Home({ user }) {
   const [stampCount, setStampCount] = useState(0);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
-  const [scanStatus, setScanStatus] = useState("");
+  const [scanStatus, setScanStatus] = useState("Scan the staff QR code at the till…");
 
   useEffect(() => {
     if (!localStorage.getItem("introSeen")) {
@@ -190,15 +190,6 @@ function Home({ user }) {
     <video id="qr-reader" playsInline autoPlay muted></video>
     <div className="qr-overlay">
       <p>{scanStatus}</p>
-      <button
-        className="close-btn"
-        onClick={() => {
-          if (scannerInstance) scannerInstance.stop();
-          setShowQRModal(false);
-        }}
-      >
-        Cancel
-      </button>
     </div>
   </div>
 )}

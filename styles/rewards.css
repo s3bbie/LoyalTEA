@@ -64,6 +64,7 @@
   border: 2px solid transparent;
   transition: border 0.2s ease;
   position: relative;
+  z-index: 0;
 }
 
 .rewards-page .reward-card:hover,
@@ -168,70 +169,6 @@
   cursor: not-allowed;
 }
 
-.rewards-page .qr-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(36, 34, 35, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.rewards-page .qr-modal.hidden {
-  display: none;
-}
-
-.rewards-page .qr-modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  text-align: center;
-}
-
-.rewards-page .qr-modal-header {
-  font-weight: 600;
-  color: #91204D;
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-
-.rewards-page #qr-reader {
-  display: block;
-  margin: 0 auto;
-  width: 260px;
-  max-width: 90vw;
-  height: 260px;
-  border-radius: 10px;
-  background: #222;
-  object-fit: cover;
-}
-
-.rewards-page #scanStatus {
-  text-align: center;
-  margin-top: 10px;
-  color: #91204D;
-  font-weight: 500;
-}
-
-.rewards-page .close-btn {
-  margin-top: 1.2rem;
-  background: #f58ca0;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.7rem 2rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.rewards-page .close-btn:hover {
-  background: #91204D;
-}
 
 .rewards-page .main-navbar {
   background: #fff;
@@ -262,4 +199,56 @@
 
 .rewards-page .hidden {
   display: none !important;
+}
+
+/* Rewards QR scanner fullscreen (match Home.js) */
+/* Rewards QR scanner fullscreen */
+.rewards-page .qr-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.rewards-page .qr-fullscreen video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rewards-page .qr-overlay {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  color: white;
+}
+
+.rewards-page .qr-overlay p {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.rewards-page .qr-close-x {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0,0,0,0.6);
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10000;
+  transition: background 0.2s ease;
+}
+
+.rewards-page .qr-close-x:hover {
+  background: rgba(0,0,0,0.8);
 }

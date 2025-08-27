@@ -3,9 +3,6 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/utils/supabaseClient";
-import Script from "next/script";
-import bcrypt from "bcryptjs";
 
 export default function Register() {
   const router = useRouter();
@@ -32,40 +29,27 @@ export default function Register() {
       return;
     }
 
-    const pinHash = await bcrypt.hash(pin, 10);
-
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", username)
-      .single();
-
-    if (existingUser) {
-      alert("Username already taken.");
-      setLoading(false);
-      return;
-    }
-
-    const { error } = await supabase.from("users").insert([
-      {
-        username,
-        pin_hash: pinHash,
-        stamp_count: 0,
-      },
-    ]);
+    // Call our API instead of direct supabase insert
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, pin }),
+    });
 
     setLoading(false);
-    if (error) {
-      alert(error.message || "Registration failed");
+
+    if (res.ok) {
+      // ✅ Cookie is set by API, now redirect
+      router.push("/home");
     } else {
-      router.push("/");
+      const { error } = await res.json();
+      alert(error || "Registration failed");
     }
   };
 
   return (
     <>
       <Head><title>Register – LoyalTEA</title></Head>
-      <Script src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY}`} />
 
       <div className="auth-container register">
         {loading && <div className="loading-overlay"><div className="spinner" /></div>}
@@ -91,7 +75,6 @@ export default function Register() {
               <input type="password" id="pin2" name="pin2" required />
             </div>
 
-            {/* Warning box */}
             <div className="pin-warning-box">
               <label htmlFor="pinWarning">
                 <input type="checkbox" id="pinWarning" name="pinWarning" required />

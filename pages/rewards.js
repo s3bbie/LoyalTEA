@@ -2,10 +2,9 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { supabase } from "../utils/supabaseClient";
-import QrScanner from "qr-scanner";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import BottomNav from "../components/BottomNav"; // 👈 import the nav
+import BottomNav from "../components/BottomNav";
 
 let scannerInstance = null;
 let scanHandled = false;
@@ -63,6 +62,9 @@ function RewardsPage({ user }) {
   const handleScan = async () => {
     setShowScanner(true);
     setScanStatus("Scan the staff QR code at the till…");
+
+    // ✅ load only when needed
+    const { default: QrScanner } = await import("qr-scanner");
 
     const todayHash = await generateTodayHash();
     const videoElem = document.getElementById("qr-reader");
@@ -205,20 +207,26 @@ function RewardsPage({ user }) {
           </div>
         )}
 
+        {/* ✅ New fullscreen scanner */}
         {showScanner && (
-          <div className="qr-modal">
-            <div className="qr-modal-content">
-              <p className="qr-modal-header">Scan Staff QR</p>
-              <video id="qr-reader" playsInline></video>
-              <p id="scanStatus">{scanStatus}</p>
-              <button className="close-btn" onClick={() => setShowScanner(false)}>Cancel</button>
-            </div>
-          </div>
-        )}
+  <div className="qr-fullscreen">
+    <video id="qr-reader" playsInline></video>
+
+    {/* Close button floats at top-right */}
+    <button className="qr-close-x" onClick={() => setShowScanner(false)}>
+      ✕
+    </button>
+
+    <div className="qr-overlay">
+      <p>{scanStatus}</p>
+    </div>
+  </div>
+)}
+
 
         <audio id="rewardSound" src="/sounds/redeem.mp3" preload="auto"></audio>
 
-        {/* 👇 add the nav at the bottom */}
+        {/* 👇 nav at bottom */}
         <BottomNav stampCount={stampCount} />
       </div>
     </>
