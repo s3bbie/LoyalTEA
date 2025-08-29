@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 export default function BottomNav({ stampCount = 0 }) {
   const router = useRouter();
 
-
   const tabs = [
     { href: "/home", label: "Home", icon: "/images/home.svg" },
     { href: "/menu", label: "Menu", icon: "/images/menu.svg" },
@@ -16,9 +15,10 @@ export default function BottomNav({ stampCount = 0 }) {
     <nav className="bottom-nav">
       {tabs.map((tab) => {
         const isActive = router.pathname === tab.href;
-        const showBadge = tab.label.toLowerCase() === "rewards" && Number(stampCount) >= 9;
 
-        console.log("Tab:", tab.label, "stampCount:", stampCount, "=> showBadge:", showBadge);
+        // ✅ Show badge on Rewards tab whenever stampCount >= 9
+        const showBadge =
+          tab.label === "Rewards" && Number(stampCount ?? 0) >= 9;
 
         return (
           <Link
@@ -26,7 +26,7 @@ export default function BottomNav({ stampCount = 0 }) {
             href={tab.href}
             className={`nav-item ${isActive ? "active" : ""}`}
           >
-            <div className="icon-wrapper">
+            <div className="icon-wrapper" style={{ position: "relative" }}>
               <img src={tab.icon} alt={tab.label} />
               {showBadge && <span className="badge">1</span>}
             </div>

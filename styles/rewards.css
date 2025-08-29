@@ -206,7 +206,7 @@
 .rewards-page .qr-fullscreen {
   position: fixed;
   inset: 0;
-  background: black;
+  background: #fff;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -251,4 +251,37 @@
 
 .rewards-page .qr-close-x:hover {
   background: rgba(0,0,0,0.8);
+}
+
+
+.qr-fullscreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.qr-close-x {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.qr-display {
+  text-align: center;
+}
+
+.qr-display p {
+  margin-top: 16px;
+  font-size: 1rem;
+  font-weight: 500;
 }

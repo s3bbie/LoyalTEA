@@ -387,16 +387,42 @@ button, input, select, textarea {
 .modal {
   position: fixed;
   z-index: 1000;
-  left: 0; top: 0; width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.7);
-  display: flex; align-items: center; justify-content: center;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .modal-content {
-  background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px;
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   position: relative;
 }
+
+.modal-content h2 {
+  margin-top: 0;
+  color: #951662;
+}
+
+.modal-content p {
+  margin: 12px 0;
+  color: #444;
+}
+
 .close {
-  position: absolute; top: 10px; right: 20px; font-size: 2rem; cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #333;
 }
 
 .button-text-container {
@@ -431,53 +457,48 @@ button, input, select, textarea {
 }
 
 
-.qr-fullscreen {
-  position: fixed;
-  inset: 0;
-  background: black;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+.qr-box {
+  overflow: hidden;
+  max-height: 160px; /* just button height */
+  transition: max-height 0.4s ease, padding 0.3s ease;
 }
 
-.qr-fullscreen video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.qr-box.open {
+  max-height: 400px; /* enough to reveal QR */
+  padding-bottom: 16px;
 }
 
-.qr-overlay {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
+.qr-content {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
   text-align: center;
-  color: white;
+  position: relative;
 }
 
-.qr-overlay p {
-  margin-bottom: 10px;
-  font-size: 1.2rem;
+.qr-box.open .qr-content {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.qr-close-x {
+.qr-close-inline {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(0,0,0,0.6);
+  right: 8px;
+  top: 8px;
+  font-size: 16px;
+  background: none;
   border: none;
-  color: white;
-  font-size: 1.8rem;
-  line-height: 1;
-  padding: 6px 10px;
-  border-radius: 50%;
   cursor: pointer;
-  z-index: 10000;
-  transition: background 0.2s ease;
 }
 
-.qr-close-x:hover {
-  background: rgba(0,0,0,0.8);
+.qr-display {
+  margin-top: 36px;
 }
+
+.qr-display p {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
 
