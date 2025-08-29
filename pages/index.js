@@ -35,36 +35,44 @@ const handleLogin = async (e) => {
 
 
   return (
-    <>
-      <Head><title>Login – LoyalTEA</title></Head>
-      <Script src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITEKEY}`} />
-      <div className="auth-container login">
-        <div className="form-wrapper">
-          <div className="logo">
-            <img src="/images/logo.png" alt="LoyalTEA Logo" />
-          </div>
+<>
+  <Head><title>Login – LoyalTEA</title></Head>
 
-          <form className="auth-form" onSubmit={handleLogin}>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input type="text" id="username" name="username" required />
-            </div>
+  {/* Top-right staff login button */}
+  <div className="staff-login-btn">
+    <a className="btn-primary" href="/staff/login">Staff Login</a>
+  </div>
 
-            <div className="form-group">
-              <label htmlFor="pin">PIN</label>
-              <input type="password" id="pin" name="pin" required />
-            </div>
-
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
-
-          <p className="signup-prompt">
-            Not a member? <Link href="/register">Sign up</Link>
-          </p>
-        </div>
+  <div className="auth-container login">
+    <div className="form-wrapper">
+      <div className="logo">
+        <img src="/images/logo.png" alt="LoyalTEA Logo" />
       </div>
-    </>
+
+      <form className="auth-form" onSubmit={handleLogin}>
+        <div className="form-group">
+          <label htmlFor="username">Username</label>
+          <input type="text" id="username" name="username" required />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="pin">PIN</label>
+          <input type="password" id="pin" name="pin" required />
+        </div>
+
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
+      </form>
+
+      <p className="signup-prompt">
+        Not a member? <Link href="/register">Sign up</Link>
+      </p>
+    </div>
+  </div>
+</>
+
+
+
   );
 }

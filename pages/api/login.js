@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     if (req.method !== "POST") return res.status(405).end();
 
     const { username, pin } = req.body;
-    console.log("➡️ Login attempt:", { username });
+
 
     if (!username || !pin) {
       return res.status(400).json({ error: "Missing username or PIN" });
@@ -22,6 +22,9 @@ export default async function handler(req, res) {
       .eq("username", username)
       .maybeSingle();
 
+      console.log("Fetched user:", user);
+console.log("Supabase error:", error);
+
     if (error) {
       console.error("❌ Supabase error:", error);
       return res.status(500).json({ error: "Database error", details: error.message });
@@ -32,7 +35,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Invalid username or PIN" });
     }
 
-    console.log("✅ User found:", user);
+
 
     // Verify PIN
     const validPin = await bcrypt.compare(pin, user.pin_hash);
@@ -54,7 +57,7 @@ export default async function handler(req, res) {
       { expiresIn: "7d" }
     );
 
-    console.log("✅ JWT generated");
+
 
     // Set cookie
     res.setHeader(
@@ -68,12 +71,15 @@ export default async function handler(req, res) {
       })
     );
 
-    console.log("✅ Cookie set, login success");
+
 
     // Update last login
-    await supabase.from("users").update({ last_login_at: new Date().toISOString() }).eq("id", user.id);
+await supabase
+  .from("users")
+  .update({ last_login_at: new Date().toISOString() })
+  .eq("id", user.id);
 
-    return res.status(200).json({ message: "Login successful" });
+    return res.status(200).json({ message: "Login successful", user });
   } catch (err) {
     console.error("🔥 Unexpected login error:", err);
     return res.status(500).json({ error: "Internal Server Error", details: err.message });

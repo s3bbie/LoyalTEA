@@ -2,35 +2,33 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import BottomNav from "../components/BottomNav";
-import QrScanner from "qr-scanner";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
-
-let scannerInstance = null;
-let scanHandled = false;
+import { QRCodeCanvas } from "qrcode.react";
 
 function IntroModal({ onClose }) {
   return (
-    <div className="intro-overlay">
-      <div className="intro-content">
+    <div className="modal">
+      <div className="modal-content">
+        <span className="close" onClick={onClose}>×</span>
         <h2>Welcome to LoyalTEA ☕</h2>
         <p>
-          Collect stamps every time you buy at the canteen. Once you reach 9, redeem a free drink 🎉
+          Collect stamps every time you buy at the canteen. 
+          Once you reach 9, redeem a free drink 🎉
         </p>
-        <button className="btn-primary" onClick={onClose}>Got it!</button>
+        <button className="btn-primary" onClick={onClose}>
+          Got it!
+        </button>
       </div>
     </div>
   );
 }
 
 function Home({ user }) {
-  const router = useRouter();
   const [stampCount, setStampCount] = useState(0);
-  const [showQRModal, setShowQRModal] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
-  const [scanStatus, setScanStatus] = useState("Scan the staff QR code at the till…");
 
   useEffect(() => {
     if (!localStorage.getItem("introSeen")) {
@@ -59,78 +57,6 @@ function Home({ user }) {
     setShowIntro(false);
   };
 
-  const generateTodayHash = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    const encoder = new TextEncoder();
-    const hashBuffer = await crypto.subtle.digest(
-      "SHA-256",
-      encoder.encode("LOYALTEA_SECRET_SALT" + today)
-    );
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  };
-
-  const handleShowQRCode = async () => {
-    setShowQRModal(true);
-    scanHandled = false;
-
-    const todayHash = await generateTodayHash();
-    const videoElem = document.getElementById("qr-reader");
-
-    scannerInstance = new QrScanner(
-      videoElem,
-      async (result) => {
-        if (scanHandled) return;
-
-        let data;
-        try {
-          data = JSON.parse(result.data);
-        } catch {
-          setScanStatus("Invalid QR code.");
-          return;
-        }
-
-        if (data.type === "staff" && data.code === todayHash) {
-          scanHandled = true;
-          await addStamp();
-          setScanStatus("✅ Stamp added!");
-          scannerInstance.stop();
-          setTimeout(() => setShowQRModal(false), 1200);
-        } else {
-          setScanStatus("Invalid staff QR.");
-        }
-      },
-      {
-        preferredCamera: "environment",
-        highlightScanRegion: true,
-        highlightCodeOutline: true,
-      }
-    );
-
-    scannerInstance.start();
-  };
-
-  const addStamp = async () => {
-    if (stampCount >= 9) {
-      alert("You already have 9 stamps. Please redeem your free drink before collecting more.");
-      return;
-    }
-
-    const newCount = stampCount + 1;
-
-    const { error: updateErr } = await supabase
-      .from("users")
-      .update({ stamp_count: newCount })
-      .eq("id", user.sub);
-
-    if (updateErr) {
-      console.error("⚠️ Error updating stamp count:", updateErr.message);
-      return;
-    }
-
-    setStampCount(newCount);
-  };
-
   return (
     <>
       <Head><title>Home – LoyalTEA</title></Head>
@@ -138,7 +64,6 @@ function Home({ user }) {
       <div id="pageWrapper">
         <div className="home-container">
           <div className="top-background-block"></div>
-
           <div className="home-header">
             <p className="welcome-text">
               Hi,<span className="user-name"> {user.username}</span>
@@ -162,38 +87,32 @@ function Home({ user }) {
             </section>
           </div>
 
-          <div className="action-section">
-            <button className="use-btn" onClick={handleShowQRCode}>
+          {/* ✅ Collect Stamps Button with expandable QR */}
+          <div className={`qr-box ${showQR ? "open" : ""}`}>
+            <button className="use-btn" onClick={() => setShowQR(!showQR)}>
               <div className="button-text-container">
-                <span className="collect-stamps-text">Collect Stamps</span>
-                <span className="scan-at-till-text">Scan at till</span>
+                <span className="collect-stamps-text">Select here to</span>
+                <span className="scan-at-till-text">Show QR Code</span>
               </div>
             </button>
+
+            <div className="qr-content">
+              <button
+                className="qr-close-inline"
+                onClick={() => setShowQR(false)}
+              >
+              </button>
+              <div className="qr-display">
+                <QRCodeCanvas value={user.sub} size={160} />
+                <p>Show this QR Code to staff to < br/>collect your stamp</p>
+              </div>
+            </div>
           </div>
 
           <div className="action-section">
             <button className="menu-btn" id="menuBtn">Canteen Menu</button>
           </div>
         </div>
-
-{showQRModal && (
-  <div className="qr-fullscreen">
-    <button
-      className="qr-close-x"
-      onClick={() => {
-        if (scannerInstance) scannerInstance.stop();
-        setShowQRModal(false);
-      }}
-    >
-      ✖
-    </button>
-    <video id="qr-reader" playsInline autoPlay muted></video>
-    <div className="qr-overlay">
-      <p>{scanStatus}</p>
-    </div>
-  </div>
-)}
-
 
         {showIntro && <IntroModal onClose={handleCloseIntro} />}
         <BottomNav stampCount={stampCount} />

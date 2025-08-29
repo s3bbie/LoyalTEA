@@ -1,13 +1,13 @@
 .settings-container {
   flex: 1;
-
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding-bottom: 100px; 
+  padding-bottom: 80px; 
   background-color: #fff;
 }
+
 
 .settings-container section {
   padding: 0 0 0 1rem;
@@ -92,3 +92,5 @@
     font-size: 0.95rem;
   }
 }
+
+

@@ -282,3 +282,12 @@ body, html {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.1); opacity: 0.9; }
 }
+
+.staff-login-btn {
+  position: fixed;   /* pins it to the screen */
+  top: 20px;         /* distance from top */
+  right: 20px;       /* distance from right */
+  z-index: 1000;     /* keeps it above everything else */
+}
+
+
