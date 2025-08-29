@@ -1,28 +1,53 @@
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import StaffBottomNav from "../../components/StaffBottomNav";
-
-// dynamically load QR reader (no SSR issues)
-const QrReader = dynamic(() => import("react-qr-reader"), { ssr: false });
+import QrScanner from "qr-scanner";
 
 export default function StaffScan() {
+  const videoRef = useRef(null);
   const [message, setMessage] = useState("Ready to scan...");
   const [scannedData, setScannedData] = useState(null);
 
-  async function handleScan(data) {
-    if (!data) return;
+  useEffect(() => {
+    let qrScanner;
 
+    if (videoRef.current) {
+      qrScanner = new QrScanner(
+        videoRef.current,
+        async (result) => {
+          if (!result?.data) return;
+          handleScan(result.data);
+        },
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      );
+
+      qrScanner.start().catch((err) => {
+        console.error("Camera error:", err);
+        setMessage("❌ Camera error");
+      });
+    }
+
+    return () => {
+      if (qrScanner) {
+        qrScanner.stop();
+        qrScanner.destroy();
+      }
+    };
+  }, []);
+
+  async function handleScan(data) {
     try {
       const parsed = JSON.parse(data);
       setScannedData(parsed);
 
       if (parsed.mode === "stamp") {
-        // ✅ increment stamps
         const { error } = await supabase
           .from("users")
           .update({
-            stamp_count: supabase.rpc("increment", { by: 1 }), // or just stamp_count + 1 if RPC not set
+            stamp_count: supabase.rpc("increment", { by: 1 }),
             total_stamps: supabase.rpc("increment", { by: 1 }),
           })
           .eq("id", parsed.userId);
@@ -32,7 +57,6 @@ export default function StaffScan() {
       }
 
       if (parsed.mode === "reward") {
-        // ✅ subtract 9 stamps and log redemption
         const { error: updateError } = await supabase
           .from("users")
           .update({
@@ -42,7 +66,6 @@ export default function StaffScan() {
 
         if (updateError) throw updateError;
 
-        // log redemption
         const { error: logError } = await supabase.from("redemptions").insert([
           {
             user_id: parsed.userId,
@@ -61,23 +84,13 @@ export default function StaffScan() {
     }
   }
 
-  function handleError(err) {
-    console.error(err);
-    setMessage("❌ Camera error");
-  }
-
   return (
     <div className="scan-page">
       <h1>Scan Customer QR</h1>
       <p>{message}</p>
 
       <div className="qr-reader">
-        <QrReader
-          delay={300}
-          onError={handleError}
-          onScan={handleScan}
-          style={{ width: "100%" }}
-        />
+        <video ref={videoRef} style={{ width: "100%" }} />
       </div>
 
       <StaffBottomNav />
