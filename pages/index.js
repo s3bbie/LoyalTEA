@@ -40,7 +40,7 @@ const handleLogin = async (e) => {
 
   {/* Top-right staff login button */}
   <div className="staff-login-btn">
-    <a className="btn-primary" href="/staff/login">Staff Login</a>
+    <Link href="/staff/login" className="btn-primary">Staff Login</Link>
   </div>
 
   <div className="auth-container login">
