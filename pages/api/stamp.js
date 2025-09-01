@@ -69,14 +69,12 @@ export default async function handler(req, res) {
         .update({ stamp_count: userData.stamp_count - 9 })
         .eq("id", userId);
 
-      // insert into redeems using reward_id
+      // insert into redeems (minimal)
       const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
         {
           user_id: userId,
-          reward_id: rewardId, // 👈 no lookup needed
+          reward_id: rewardId,
           created_at: new Date().toISOString(),
-          count: 1,
-          total: 9,
         },
       ]);
 
