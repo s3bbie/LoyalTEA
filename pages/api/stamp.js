@@ -6,9 +6,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mode, userId, reward } = req.body;
+    const { mode, userId, rewardId } = req.body;
+    console.log("API /api/stamp hit:", { mode, userId, rewardId });
 
-    // Fetch current user
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    // fetch user
     const { data: userData, error: fetchError } = await supabaseAdmin
       .from("users")
       .select("stamp_count, username")
@@ -16,52 +21,78 @@ export default async function handler(req, res) {
       .single();
 
     if (fetchError || !userData) {
+      console.error("User fetch error:", fetchError);
       return res.status(400).json({ error: "User not found" });
     }
 
-    // ✅ Stamp mode
+    // ✅ Add a stamp
     if (mode === "stamp") {
       if ((userData.stamp_count || 0) >= 9) {
-        return res.status(400).json({ error: `${userData.username} already has 9 stamps.` });
+        return res
+          .status(400)
+          .json({ error: `${userData.username} already has 9 stamps.` });
       }
 
       const newCount = (userData.stamp_count || 0) + 1;
 
-      // Update users table
+      // update user stamp count
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })
         .eq("id", userId);
 
-      // Insert into stamps history
+      // log in stamps history
       await supabaseAdmin.from("stamps").insert([
         { user_id: userId, created_at: new Date().toISOString() },
       ]);
 
-      return res.status(200).json({ message: `✅ Added 1 stamp for ${userData.username} (${newCount}/9)` });
+      return res.status(200).json({
+        message: `✅ Added 1 stamp for ${userData.username} (${newCount}/9)`,
+      });
     }
 
-    // ✅ Reward mode
+    // ✅ Redeem a reward
     if (mode === "reward") {
       if (userData.stamp_count < 9) {
-        return res.status(400).json({ error: `${userData.username} does not have enough stamps.` });
+        return res
+          .status(400)
+          .json({ error: `${userData.username} does not have enough stamps.` });
       }
 
+      if (!rewardId) {
+        return res.status(400).json({ error: "Missing rewardId" });
+      }
+
+      // deduct 9 stamps
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: userData.stamp_count - 9 })
         .eq("id", userId);
 
-      await supabaseAdmin.from("redeems").insert([
-        { user_id: userId, reward, redeemed_at: new Date().toISOString() },
+      // insert into redeems using reward_id
+      const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
+        {
+          user_id: userId,
+          reward_id: rewardId, // 👈 no lookup needed
+          created_at: new Date().toISOString(),
+          count: 1,
+          total: 9,
+        },
       ]);
 
-      return res.status(200).json({ message: `🎉 ${userData.username} redeemed ${reward}` });
+      if (redeemError) {
+        console.error("Redeem insert error:", redeemError);
+        return res.status(500).json({ error: redeemError.message });
+      }
+
+      return res
+        .status(200)
+        .json({ message: `🎉 ${userData.username} redeemed a reward` });
     }
 
     return res.status(400).json({ error: "Invalid mode" });
   } catch (err) {
     console.error("API error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: err.message });
   }
 }

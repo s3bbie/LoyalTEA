@@ -1,3 +1,4 @@
+// pages/rewards.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { supabase } from "../utils/supabaseClient";
@@ -8,42 +9,32 @@ import { QRCodeCanvas } from "qrcode.react";
 
 function RewardsPage({ user }) {
   const [stampCount, setStampCount] = useState(0);
+  const [rewards, setRewards] = useState([]);
   const [selectedReward, setSelectedReward] = useState(null);
   const [showQR, setShowQR] = useState(false);
 
-  const rewards = [
-    { title: "Normal Tea", subtitle: "Classic blend", value: "Cafe Tea", image: "/images/drinks/tea.jpg" },
-    { title: "Special Tea", subtitle: "Unique infusion", value: "Cafe Speciality Tea", image: "/images/drinks/specialtea.jpg" },
-    { title: "Double Espresso", subtitle: "Strong & intense", value: "Double Espresso", image: "/images/drinks/espresso.jpg" },
-    { title: "Flat White", subtitle: "Smooth & bold", value: "Flat White", image: "/images/drinks/flatwhite.jpg" },
-    { title: "Americano", subtitle: "Rich and clean", value: "Americano", image: "/images/drinks/americano.jpg" },
-    { title: "Latte", subtitle: "Creamy and smooth", value: "Cafe Latte", image: "/images/drinks/latte.jpg" },
-    { title: "Cappuccino", subtitle: "Foamy delight", value: "Cappuccino", image: "/images/drinks/cappuccino.jpg" },
-    { title: "Mocha", subtitle: "Coffee & chocolate", value: "Cafe Mocha", image: "/images/drinks/mocha.jpg" },
-    { title: "Hot Chocolate", subtitle: "Sweet & comforting", value: "Hot Chocolate", image: "/images/drinks/hotchocolate.jpg" },
-    { title: "Chai Latte", subtitle: "Spiced & aromatic", value: "Chai Latte", image: "/images/drinks/chailatte.jpg" }
-  ];
-
-  // fetch user's stamp count
+  // fetch user's stamp count + rewards list
   useEffect(() => {
-    const fetchStampCount = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      const { data: userData } = await supabase
         .from("users")
         .select("stamp_count")
-        .eq("id", user.dbId)
+        .eq("id", user.sub)
         .single();
 
-      if (!error && data) {
-        setStampCount(data.stamp_count || 0);
-      } else {
-        console.error("⚠️ Error fetching stamp count:", error?.message);
-      }
+      if (userData) setStampCount(userData.stamp_count || 0);
+
+      const { data: rewardsData } = await supabase
+        .from("reward_prices")
+        .select("id, reward_name, price, image_url, category");
+
+      if (rewardsData) setRewards(rewardsData);
     };
 
-    fetchStampCount();
-    const interval = setInterval(fetchStampCount, 5000);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, [user.dbId]);
+  }, [user.sub]);
 
   const handleUseReward = () => {
     if (!selectedReward) return;
@@ -64,25 +55,38 @@ function RewardsPage({ user }) {
         </div>
 
         {stampCount < 9 ? (
-          <div id="emptyStateMsg">No rewards yet! Earn 9 stamps for a free drink.</div>
+          <div id="emptyStateMsg">
+            No rewards yet! Earn 9 stamps for a free drink.
+          </div>
         ) : (
           <div className="rewards-container">
             <form className="rewards-group">
-              {rewards.map((item, index) => (
-                <label key={index} className={`reward-card ${selectedReward === item.value ? "selected" : ""}`}>
+              {rewards.map((item) => (
+                <label
+                  key={item.id}
+                  className={`reward-card ${
+                    selectedReward === item.id ? "selected" : ""
+                  }`}
+                >
                   <div className="reward-card-left">
-                    <img src={item.image} className="reward-icon round" alt={item.title} />
+                    <img
+                      src={item.image_url}
+                      className="reward-icon round"
+                      alt={item.reward_name}
+                    />
                     <div className="reward-text">
-                      <p className="reward-title">{item.title}</p>
-                      <p className="reward-subtext">{item.subtitle}</p>
+                      <p className="reward-title">{item.reward_name}</p>
+                      <p className="reward-subtext">
+                        {item.category} – £{item.price.toFixed(2)}
+                      </p>
                     </div>
                   </div>
                   <input
                     type="radio"
                     name="reward"
-                    value={item.value}
-                    checked={selectedReward === item.value}
-                    onChange={() => setSelectedReward(item.value)}
+                    value={item.id}
+                    checked={selectedReward === item.id}
+                    onChange={() => setSelectedReward(item.id)}
                   />
                   <span className="custom-radio"></span>
                 </label>
@@ -102,13 +106,15 @@ function RewardsPage({ user }) {
         {/* ✅ QR fullscreen when using reward */}
         {showQR && (
           <div className="qr-fullscreen">
-            <button className="qr-close-x" onClick={() => setShowQR(false)}>✕</button>
+            <button className="qr-close-x" onClick={() => setShowQR(false)}>
+              ✕
+            </button>
             <div className="qr-display">
               <QRCodeCanvas
                 value={JSON.stringify({
-                  mode: "reward",        // ✅ now includes mode
-                  userId: user.dbId,     // ✅ Supabase UUID
-                  reward: selectedReward,
+                  mode: "reward",
+                  userId: user.sub,
+                  rewardId: selectedReward, // 👈 sending reward_id, not name
                 })}
                 size={240}
               />
@@ -133,18 +139,7 @@ export async function getServerSideProps({ req }) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const { data: dbUser, error } = await supabase
-      .from("users")
-      .select("id, username, stamp_count")
-      .eq("username", decoded.username)
-      .single();
-
-    if (error || !dbUser) {
-      return { redirect: { destination: "/", permanent: false } };
-    }
-
-    return { props: { user: { ...decoded, dbId: dbUser.id } } };
+    return { props: { user: decoded } };
   } catch (err) {
     return { redirect: { destination: "/", permanent: false } };
   }
