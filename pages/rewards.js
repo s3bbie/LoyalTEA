@@ -1,4 +1,3 @@
-// pages/rewards.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { supabase } from "../utils/supabaseClient";
@@ -31,7 +30,7 @@ function RewardsPage({ user }) {
       const { data, error } = await supabase
         .from("users")
         .select("stamp_count")
-        .eq("id", user.sub)
+        .eq("id", user.dbId)
         .single();
 
       if (!error && data) {
@@ -44,7 +43,7 @@ function RewardsPage({ user }) {
     fetchStampCount();
     const interval = setInterval(fetchStampCount, 5000);
     return () => clearInterval(interval);
-  }, [user.sub]);
+  }, [user.dbId]);
 
   const handleUseReward = () => {
     if (!selectedReward) return;
@@ -107,7 +106,8 @@ function RewardsPage({ user }) {
             <div className="qr-display">
               <QRCodeCanvas
                 value={JSON.stringify({
-                  userId: user.sub,
+                  mode: "reward",        // ✅ now includes mode
+                  userId: user.dbId,     // ✅ Supabase UUID
                   reward: selectedReward,
                 })}
                 size={240}
@@ -133,7 +133,18 @@ export async function getServerSideProps({ req }) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
+
+    const { data: dbUser, error } = await supabase
+      .from("users")
+      .select("id, username, stamp_count")
+      .eq("username", decoded.username)
+      .single();
+
+    if (error || !dbUser) {
+      return { redirect: { destination: "/", permanent: false } };
+    }
+
+    return { props: { user: { ...decoded, dbId: dbUser.id } } };
   } catch (err) {
     return { redirect: { destination: "/", permanent: false } };
   }

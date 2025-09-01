@@ -1,4 +1,3 @@
-// pages/staff/scan.js
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import StaffBottomNav from "../../components/StaffBottomNav";
@@ -29,16 +28,17 @@ export default function StaffScan() {
 
             if (fetchError || !userData) throw fetchError || new Error("User not found");
 
+            // cap at 9 stamps
+            const newCount = Math.min((userData.stamp_count || 0) + 1, 9);
+
             const { error: updateError } = await supabase
               .from("users")
-              .update({
-                stamp_count: userData.stamp_count + 1,
-              })
+              .update({ stamp_count: newCount })
               .eq("id", parsed.userId);
 
             if (updateError) throw updateError;
 
-            setMessage(`✅ Stamp added for ${parsed.userId}`);
+            setMessage(`✅ Stamp added for ${parsed.userId} (${newCount}/9)`);
           }
 
           // ✅ Reward Mode
@@ -83,7 +83,7 @@ export default function StaffScan() {
         }
       },
       {
-        preferredCamera: "environment",
+        preferredCamera: "environment", // back camera
         highlightScanRegion: true,
         highlightCodeOutline: true,
       }
