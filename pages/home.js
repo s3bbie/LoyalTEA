@@ -104,10 +104,9 @@ function Home({ user }) {
               </button>
               <div className="qr-display">
                 <QRCodeCanvas
-  value={JSON.stringify({ mode: "stamp", userId: user.id })}
+  value={JSON.stringify({ mode: "stamp", userId: user.dbId })}
   size={160}
 />
-
                 <p>Show this QR Code to staff to < br/>collect your stamp</p>
               </div>
             </div>
@@ -135,10 +134,35 @@ export async function getServerSideProps({ req }) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
+
+    // 🔑 Fetch user row from Supabase using the username
+    const { data: dbUser, error } = await supabase
+      .from("users")
+      .select("id, username, stamp_count")
+      .eq("username", decoded.username)
+      .single();
+
+    if (error || !dbUser) {
+      console.error("❌ Supabase user lookup failed:", error?.message);
+      return { redirect: { destination: "/", permanent: false } };
+    }
+
+    // ✅ Merge decoded token with dbId
+    return {
+      props: {
+        user: {
+          ...decoded,
+          dbId: dbUser.id, // The UUID from Supabase
+          username: dbUser.username,
+        },
+      },
+    };
   } catch (err) {
+    console.error("JWT verify error:", err.message);
     return { redirect: { destination: "/", permanent: false } };
   }
 }
+
+
 
 export default Home;

@@ -1,3 +1,4 @@
+// pages/staff/scan.js
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import StaffBottomNav from "../../components/StaffBottomNav";
@@ -18,24 +19,47 @@ export default function StaffScan() {
         try {
           const parsed = JSON.parse(result.data);
 
+          // ✅ Stamp Mode
           if (parsed.mode === "stamp") {
-            const { error } = await supabase
+            const { data: userData, error: fetchError } = await supabase
               .from("users")
-              .update({
-                stamp_count: supabase.rpc("increment", { by: 1 }),
-                total_stamps: supabase.rpc("increment", { by: 1 }),
-              })
-              .eq("id", parsed.userId);
+              .select("stamp_count")
+              .eq("id", parsed.userId)
+              .single();
 
-            if (error) throw error;
-            setMessage(`✅ Stamp added for ${parsed.userId}`);
-          }
+            if (fetchError || !userData) throw fetchError || new Error("User not found");
 
-          if (parsed.mode === "reward") {
             const { error: updateError } = await supabase
               .from("users")
               .update({
-                stamp_count: supabase.rpc("decrement", { by: 9 }),
+                stamp_count: userData.stamp_count + 1,
+              })
+              .eq("id", parsed.userId);
+
+            if (updateError) throw updateError;
+
+            setMessage(`✅ Stamp added for ${parsed.userId}`);
+          }
+
+          // ✅ Reward Mode
+          if (parsed.mode === "reward") {
+            const { data: userData, error: fetchError } = await supabase
+              .from("users")
+              .select("stamp_count")
+              .eq("id", parsed.userId)
+              .single();
+
+            if (fetchError || !userData) throw fetchError || new Error("User not found");
+
+            if (userData.stamp_count < 9) {
+              setMessage("⚠️ Not enough stamps to redeem reward");
+              return;
+            }
+
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({
+                stamp_count: userData.stamp_count - 9,
               })
               .eq("id", parsed.userId);
 
@@ -59,7 +83,7 @@ export default function StaffScan() {
         }
       },
       {
-        preferredCamera: "environment", // back camera on mobile
+        preferredCamera: "environment",
         highlightScanRegion: true,
         highlightCodeOutline: true,
       }
