@@ -76,7 +76,10 @@ export default function StaffDashboard() {
   ];
 
   return (
+<<<<<<< HEAD
     
+=======
+>>>>>>> 302e486 (Please update on Vercel)
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold mb-6">Staff Dashboard</h1>
 

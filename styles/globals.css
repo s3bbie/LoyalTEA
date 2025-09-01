@@ -9,9 +9,8 @@ body, html {
   font-family: 'Poppins', sans-serif;
   background-color: #a91c71;
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
+
 
 .custom-toast {
   position: fixed;
