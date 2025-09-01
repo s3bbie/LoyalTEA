@@ -35,6 +35,7 @@ function Home({ user }) {
       setShowIntro(true);
     }
 
+    // ✅ Initial fetch
     const fetchStampCount = async () => {
       const { data, error } = await supabase
         .from("users")
@@ -50,6 +51,28 @@ function Home({ user }) {
     };
 
     fetchStampCount();
+
+    // ✅ Realtime subscription
+    const channel = supabase
+      .channel("stamps-channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `id=eq.${user.sub}`,
+        },
+        (payload) => {
+          console.log("📡 Stamp count updated:", payload.new.stamp_count);
+          setStampCount(payload.new.stamp_count);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user.sub]);
 
   const handleCloseIntro = () => {
@@ -100,14 +123,13 @@ function Home({ user }) {
               <button
                 className="qr-close-inline"
                 onClick={() => setShowQR(false)}
-              >
-              </button>
+              />
               <div className="qr-display">
                 <QRCodeCanvas
-  value={JSON.stringify({ mode: "stamp", userId: user.dbId })}
-  size={160}
-/>
-                <p>Show this QR Code to staff to < br/>collect your stamp</p>
+                  value={JSON.stringify({ mode: "stamp", userId: user.sub })}
+                  size={160}
+                />
+                <p>Show this QR Code to staff to <br/>collect your stamp</p>
               </div>
             </div>
           </div>
@@ -134,35 +156,10 @@ export async function getServerSideProps({ req }) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // 🔑 Fetch user row from Supabase using the username
-    const { data: dbUser, error } = await supabase
-      .from("users")
-      .select("id, username, stamp_count")
-      .eq("username", decoded.username)
-      .single();
-
-    if (error || !dbUser) {
-      console.error("❌ Supabase user lookup failed:", error?.message);
-      return { redirect: { destination: "/", permanent: false } };
-    }
-
-    // ✅ Merge decoded token with dbId
-    return {
-      props: {
-        user: {
-          ...decoded,
-          dbId: dbUser.id, // The UUID from Supabase
-          username: dbUser.username,
-        },
-      },
-    };
+    return { props: { user: decoded } };
   } catch (err) {
-    console.error("JWT verify error:", err.message);
     return { redirect: { destination: "/", permanent: false } };
   }
 }
-
-
 
 export default Home;
