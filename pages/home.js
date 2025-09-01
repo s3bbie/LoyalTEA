@@ -103,7 +103,11 @@ function Home({ user }) {
               >
               </button>
               <div className="qr-display">
-                <QRCodeCanvas value={user.sub} size={160} />
+                <QRCodeCanvas
+  value={JSON.stringify({ mode: "stamp", userId: user.id })}
+  size={160}
+/>
+
                 <p>Show this QR Code to staff to < br/>collect your stamp</p>
               </div>
             </div>

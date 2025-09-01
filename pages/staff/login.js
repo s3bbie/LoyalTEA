@@ -49,9 +49,11 @@ export default function StaffLogin() {
       </Head>
       <div className="auth-container login">
         <div className="form-wrapper">
-          <div className="logo">
+          <div className="flex justify-center">
+<div className="logo">
             <img src="/images/logo.png" alt="LoyalTEA Logo" />
           </div>
+</div>
 
           <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">

@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+
 
 
 export default function Login() {
@@ -46,13 +46,9 @@ const handleLogin = async (e) => {
   <div className="auth-container login">
     <div className="form-wrapper">
       <div className="flex justify-center">
-  <Image 
-  src="/images/logo.png" 
-  alt="LoyalTEA Logo" 
-  width={200} 
-  height={200} 
-  priority
-/>
+<div className="logo">
+            <img src="/images/logo.png" alt="LoyalTEA Logo" />
+          </div>
 </div>
 
 
