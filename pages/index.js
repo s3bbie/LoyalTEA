@@ -45,9 +45,10 @@ const handleLogin = async (e) => {
 
   <div className="auth-container login">
     <div className="form-wrapper">
-      <div className="logo">
-        <img src="/images/logo.png" alt="LoyalTEA Logo" />
-      </div>
+      <div className="flex justify-center">
+  <img src="/images/logo.png" alt="LoyalTEA Logo" className="h-20 w-auto" />
+</div>
+
 
       <form className="auth-form" onSubmit={handleLogin}>
         <div className="form-group">
