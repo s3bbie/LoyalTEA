@@ -6,6 +6,8 @@ import QrScanner from "qr-scanner";
 export default function StaffScan() {
   const videoRef = useRef(null);
   const [message, setMessage] = useState("Ready to scan...");
+  const lockRef = useRef(false); // lock to prevent double scan
+  const scannerRef = useRef(null);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -13,24 +15,30 @@ export default function StaffScan() {
     const scanner = new QrScanner(
       videoRef.current,
       async (result) => {
-        if (!result?.data) return;
+        if (!result?.data || lockRef.current) return;
+        lockRef.current = true; // immediate lock
 
         try {
           const parsed = JSON.parse(result.data);
 
-          // ✅ Stamp Mode
+          // ✅ STAMP MODE
           if (parsed.mode === "stamp") {
             const { data: userData, error: fetchError } = await supabase
               .from("users")
-              .select("stamp_count")
+              .select("stamp_count, username")
               .eq("id", parsed.userId)
               .single();
 
             if (fetchError || !userData) throw fetchError || new Error("User not found");
 
-            // cap at 9 stamps
-            const newCount = Math.min((userData.stamp_count || 0) + 1, 9);
+            if ((userData.stamp_count || 0) >= 9) {
+              setMessage(`⚠️ ${userData.username} already has 9 stamps. Must redeem before collecting more.`);
+              return;
+            }
 
+            const newCount = (userData.stamp_count || 0) + 1;
+
+            // Update user's live balance
             const { error: updateError } = await supabase
               .from("users")
               .update({ stamp_count: newCount })
@@ -38,24 +46,35 @@ export default function StaffScan() {
 
             if (updateError) throw updateError;
 
-            setMessage(`✅ Stamp added for ${parsed.userId} (${newCount}/9)`);
+            // Log into stamps history table
+            const { error: logError } = await supabase.from("stamps").insert([
+              {
+                user_id: parsed.userId,
+                created_at: new Date().toISOString(),
+              },
+            ]);
+
+            if (logError) throw logError;
+
+            setMessage(`✅ Added 1 stamp for ${userData.username} (${newCount}/9)`);
           }
 
-          // ✅ Reward Mode
+          // ✅ REWARD MODE
           if (parsed.mode === "reward") {
             const { data: userData, error: fetchError } = await supabase
               .from("users")
-              .select("stamp_count")
+              .select("stamp_count, username")
               .eq("id", parsed.userId)
               .single();
 
             if (fetchError || !userData) throw fetchError || new Error("User not found");
 
             if (userData.stamp_count < 9) {
-              setMessage("⚠️ Not enough stamps to redeem reward");
+              setMessage(`⚠️ ${userData.username} does not have enough stamps to redeem a reward`);
               return;
             }
 
+            // Deduct stamps from balance
             const { error: updateError } = await supabase
               .from("users")
               .update({
@@ -65,7 +84,8 @@ export default function StaffScan() {
 
             if (updateError) throw updateError;
 
-            const { error: logError } = await supabase.from("redemptions").insert([
+            // Log redemption in history
+            const { error: logError } = await supabase.from("redeems").insert([
               {
                 user_id: parsed.userId,
                 reward: parsed.reward,
@@ -75,15 +95,27 @@ export default function StaffScan() {
 
             if (logError) throw logError;
 
-            setMessage(`🎉 Redeemed ${parsed.reward} for ${parsed.userId}`);
+            setMessage(`🎉 ${userData.username} redeemed ${parsed.reward}`);
           }
         } catch (err) {
           console.error("Scan error:", err);
           setMessage("❌ Invalid QR or database error");
+        } finally {
+          scanner.stop();
+
+          // Auto restart after 3s
+          setTimeout(() => {
+            lockRef.current = false;
+            setMessage("Ready to scan...");
+            scanner.start().catch((err) => {
+              console.error("Camera restart error:", err);
+              setMessage("❌ Unable to restart camera");
+            });
+          }, 3000);
         }
       },
       {
-        preferredCamera: "environment", // back camera
+        preferredCamera: "environment",
         highlightScanRegion: true,
         highlightCodeOutline: true,
       }
@@ -93,6 +125,8 @@ export default function StaffScan() {
       console.error("Camera error:", err);
       setMessage("❌ Camera not found or blocked");
     });
+
+    scannerRef.current = scanner;
 
     return () => {
       scanner.stop();
