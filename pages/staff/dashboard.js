@@ -9,44 +9,35 @@ export default function StaffDashboard() {
     totalRedemptions: 0,
     totalCustomers: 0,
     outstandingRewards: 0,
+    totalRevenue: 0,
+    revenueBreakdown: { daily: 0, weekly: 0, monthly: 0 },
+    topRedeemedDrinks: [],
+    topCustomersByValue: [],
   });
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const { data: usersData, error: usersError } = await supabase
-          .from("users")
-          .select("stamp_count, id, role");
-
-        if (usersError) throw usersError;
-
-        const totalStamps = usersData.reduce(
-          (sum, u) => sum + (u.stamp_count || 0),
-          0
-        );
-        const totalCustomers = usersData.filter((u) => u.role !== "staff").length;
-        const outstandingRewards = usersData.filter((u) => u.stamp_count >= 9).length;
-
-        const { count: redemptionsCount, error: redeemsError } = await supabase
-          .from("redeems")
-          .select("*", { count: "exact", head: true })
-          .eq("type", "reward");
-
-        if (redeemsError) throw redeemsError;
-
-        setStats({
-          totalStamps,
-          totalRedemptions: redemptionsCount || 0,
-          totalCustomers,
-          outstandingRewards,
-        });
-      } catch (err) {
-        console.error("Dashboard stats error:", err.message);
-      }
+useEffect(() => {
+  async function loadStats() {
+    try {
+      const res = await fetch("/api/staff-stats");
+      const data = await res.json();
+      setStats({
+        totalCustomers: data.total_customers,
+        totalStamps: data.total_stamps,
+        outstandingRewards: data.outstanding_rewards,
+        totalRedemptions: data.total_redemptions,
+        totalRevenue: data.total_revenue,
+        revenueBreakdown: data.revenue_breakdown,
+        topRedeemedDrinks: data.top_redeemed_drinks,
+        topCustomersByValue: data.top_customers_by_value,
+      });
+    } catch (err) {
+      console.error("Dashboard stats error:", err.message);
     }
+  }
+  loadStats();
+}, []);
 
-    loadStats();
-  }, []);
+
 
   const cards = [
     {
@@ -76,8 +67,7 @@ export default function StaffDashboard() {
   ];
 
   return (
-    
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-6 pb-24">
       <h1 className="text-2xl font-bold mb-6">Staff Dashboard</h1>
 
       {/* Stat cards */}
@@ -101,32 +91,50 @@ export default function StaffDashboard() {
       {/* Second row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold text-red-600 mb-2">⚠️ Suspicious Activity</h2>
-          <p className="text-gray-600">No suspicious activity detected.</p>
+          <h2 className="text-lg font-bold mb-2">Top Redeemed Drinks</h2>
+{stats.topRedeemedDrinks.length > 0 ? (
+  <ul className="text-sm text-gray-700">
+    {stats.topRedeemedDrinks.map((drink, idx) => (
+      <li key={idx} className="flex justify-between">
+        <span>{drink.reward_name}</span>
+        <span>{drink.redeemed_count}</span>
+      </li>
+    ))}
+  </ul>
+) : (
+  <p className="text-gray-600 text-sm">No data yet.</p>
+)}
+
         </div>
+
         <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Top Repeat Users</h2>
-          <p className="text-gray-600">No repeat users found.</p>
+          <h2 className="text-lg font-bold mb-2">Top Customers by Value</h2>
+          {stats.topCustomersByValue.length > 0 ? (
+            <ul className="text-sm text-gray-700">
+              {stats.topCustomersByValue.map((cust, idx) => (
+                <li key={idx} className="flex justify-between">
+                  <span>{cust.username}</span>
+                  <span>£{cust.total_value}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600 text-sm">No data yet.</p>
+          )}
         </div>
       </div>
 
       {/* Third row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Top Redeemed Drinks</h2>
-          <p className="text-gray-600 text-sm">No data yet.</p>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Top Customers by Value</h2>
-          <p className="text-gray-600 text-sm">No data yet.</p>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-bold mb-2">Total Revenue</h2>
-          <p className="text-2xl font-bold text-green-600">£0.00</p>
+          <p className="text-2xl font-bold text-green-600">
+            £{stats.totalRevenue}
+          </p>
           <div className="flex justify-between text-sm text-gray-500 mt-4">
-            <span>Daily £0.00</span>
-            <span>Weekly £0.00</span>
-            <span>Monthly £0.00</span>
+            <span>Daily £{stats.revenueBreakdown.daily}</span>
+            <span>Weekly £{stats.revenueBreakdown.weekly}</span>
+            <span>Monthly £{stats.revenueBreakdown.monthly}</span>
           </div>
         </div>
       </div>
