@@ -27,7 +27,7 @@ function IntroModal({ onClose }) {
 }
 
 function Home({ user }) {
-  const [stampCount, setStampCount] = useState(0);
+  const [stamps, setStamps] = useState([]);
   const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
 
@@ -36,37 +36,38 @@ function Home({ user }) {
       setShowIntro(true);
     }
 
-    // ✅ Initial fetch
-    const fetchStampCount = async () => {
+    // ✅ Fetch stamps (with reusable flag)
+    const fetchStamps = async () => {
       const { data, error } = await supabase
-        .from("users")
-        .select("stamp_count")
-        .eq("id", user.sub)
-        .single();
+        .from("stamps")
+        .select("reusable")
+        .eq("user_id", user.sub)
+        .order("created_at", { ascending: true })
+        .limit(9);
 
       if (!error && data) {
-        setStampCount(data.stamp_count || 0);
+        setStamps(data);
       } else {
-        console.error("⚠️ Error loading stamp count:", error?.message);
+        console.error("⚠️ Error loading stamps:", error?.message);
       }
     };
 
-    fetchStampCount();
+    fetchStamps();
 
-    // ✅ Realtime subscription
+    // ✅ Realtime subscription for new stamps
     const channel = supabase
       .channel("stamps-channel")
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "INSERT",
           schema: "public",
-          table: "users",
-          filter: `id=eq.${user.sub}`,
+          table: "stamps",
+          filter: `user_id=eq.${user.sub}`,
         },
         (payload) => {
-          console.log("📡 Stamp count updated:", payload.new.stamp_count);
-          setStampCount(payload.new.stamp_count);
+          console.log("📡 New stamp added:", payload.new);
+          setStamps((prev) => [...prev, payload.new].slice(-9));
         }
       )
       .subscribe();
@@ -99,13 +100,29 @@ function Home({ user }) {
           <div className="action-section">
             <section className="beans-card">
               <div className="beans-visual">
+                {/* ✅ Count */}
                 <div className="beans-count">
-                  <span>{stampCount}</span>/<span>9</span>
+                  <span>{stamps.length}</span>/<span>9</span>
                 </div>
+
+                {/* ✅ Stamp Grid */}
                 <div className="stamp-grid" id="stampGrid">
-                  {[...Array(9)].map((_, i) => (
-                    <div key={i} className={`stamp ${i < stampCount ? "filled" : ""}`} />
-                  ))}
+                  {[...Array(9)].map((_, i) => {
+                    const stamp = stamps[i];
+                    let starSrc = "/images/star-empty.png"; // default empty
+
+                    if (stamp) {
+                      starSrc = stamp.reusable
+                        ? "/images/green_star.svg" // ✅ reusable cup
+                        : "/images/grey_star.svg"; // ❌ disposable cup
+                    }
+
+                    return (
+                      <div key={i} className="stamp">
+                        <img src={starSrc} alt="stamp" className="stamp-icon" />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
@@ -134,17 +151,12 @@ function Home({ user }) {
               </div>
             </div>
           </div>
-{/* ✅ Collect Stamps Button with expandable QR 
-          <div className="action-section">
-            <button className="menu-btn" id="menuBtn">Canteen Menu</button>
-          </div> */}
 
           <DonationCard />
-
         </div>
 
         {showIntro && <IntroModal onClose={handleCloseIntro} />}
-        <BottomNav stampCount={stampCount} />
+        <BottomNav stampCount={stamps.length} />
       </div>
     </>
   );

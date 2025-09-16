@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mode, userId, rewardId } = req.body;
-    console.log("API /api/stamp hit:", { mode, userId, rewardId });
+    const { mode, userId, rewardId, reusable } = req.body; // ✅ pick up reusable
+    console.log("API /api/stamp hit:", { mode, userId, rewardId, reusable });
 
     if (!userId) {
       return res.status(400).json({ error: "Missing userId" });
@@ -35,19 +35,25 @@ export default async function handler(req, res) {
 
       const newCount = (userData.stamp_count || 0) + 1;
 
-      // update user stamp count
+      // update user stamp count (for badge/quick display)
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })
         .eq("id", userId);
 
-      // log in stamps history
+      // log in stamps history with reusable flag
       await supabaseAdmin.from("stamps").insert([
-        { user_id: userId, created_at: new Date().toISOString() },
+        {
+          user_id: userId,
+          reusable: reusable ?? false, // ✅ store staff choice
+          created_at: new Date().toISOString(),
+        },
       ]);
 
       return res.status(200).json({
-        message: `✅ Added 1 stamp for ${userData.username} (${newCount}/9)`,
+        message: reusable
+          ? `✅ Added 1 reusable stamp for ${userData.username} (${newCount}/9)`
+          : `✅ Added 1 disposable stamp for ${userData.username} (${newCount}/9)`,
       });
     }
 
