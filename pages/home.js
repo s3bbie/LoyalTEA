@@ -36,14 +36,19 @@ function Home({ user }) {
       setShowIntro(true);
     }
 
-    // ✅ Fetch stamps (with reusable flag)
+    // ✅ Fetch only stamps for this user
     const fetchStamps = async () => {
+      console.log("user object (from props):", user);
+      console.log("Using for query:", user.sub);
+
       const { data, error } = await supabase
         .from("stamps")
-        .select("reusable")
+        .select("*")
         .eq("user_id", user.sub)
         .order("created_at", { ascending: true })
         .limit(9);
+
+      console.log("Fetched stamps:", data, error);
 
       if (!error && data) {
         setStamps(data);
@@ -54,7 +59,7 @@ function Home({ user }) {
 
     fetchStamps();
 
-    // ✅ Realtime subscription for new stamps
+    // ✅ Realtime subscription
     const channel = supabase
       .channel("stamps-channel")
       .on(
@@ -67,7 +72,10 @@ function Home({ user }) {
         },
         (payload) => {
           console.log("📡 New stamp added:", payload.new);
-          setStamps((prev) => [...prev, payload.new].slice(-9));
+          setStamps((prev) => {
+            const updated = [...prev, payload.new];
+            return updated.slice(-9); // keep last 9
+          });
         }
       )
       .subscribe();
@@ -81,6 +89,10 @@ function Home({ user }) {
     localStorage.setItem("introSeen", "true");
     setShowIntro(false);
   };
+
+  // ✅ Count reusable and CO₂ saving
+  const reusableCount = stamps.filter((s) => s.reusable).length;
+  const co2Saved = reusableCount * 15; // grams (example: 15g CO₂ saved per cup)
 
   return (
     <>
@@ -98,34 +110,39 @@ function Home({ user }) {
           <h2 className="beans-title-outside">Total Stamps</h2>
 
           <div className="action-section">
-            <section className="beans-card">
-              <div className="beans-visual">
-                {/* ✅ Count */}
-                <div className="beans-count">
-                  <span>{stamps.length}</span>/<span>9</span>
-                </div>
+<section className="beans-card">
+  <div className="beans-visual">
+    <div className="beans-count">
+      <span>{stamps.length}</span>/<span>9</span>
+    </div>
+    <div className="stamp-grid" id="stampGrid">
+      {[...Array(9)].map((_, i) => {
+        if (i < stamps.length) {
+          return (
+            <div
+              key={i}
+              className={`stamp ${stamps[i].reusable ? "reusable" : "non-reusable"}`}
+            />
+          );
+        } else {
+          return <div key={i} className="stamp" />;
+        }
+      })}
+    </div>
+  </div>
 
-                {/* ✅ Stamp Grid */}
-                <div className="stamp-grid" id="stampGrid">
-                  {[...Array(9)].map((_, i) => {
-                    const stamp = stamps[i];
-                    let starSrc = "/images/star-empty.png"; // default empty
+  {/* ✅ CO₂ text below the stars */}
+  <div className="co2-saved-text">
+    {reusableCount > 0 ? (
+      <p>🌍 You’ve saved <strong>{co2Saved}g CO₂</strong> by using reusable cups!</p>
+    ) : (
+      <p>Start using reusable cups to save CO₂ 🌱</p>
+    )}
+  </div>
+</section>
 
-                    if (stamp) {
-                      starSrc = stamp.reusable
-                        ? "/images/green_star.svg" // ✅ reusable cup
-                        : "/images/grey_star.svg"; // ❌ disposable cup
-                    }
 
-                    return (
-                      <div key={i} className="stamp">
-                        <img src={starSrc} alt="stamp" className="stamp-icon" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
+
           </div>
 
           {/* ✅ Collect Stamps Button with expandable QR */}

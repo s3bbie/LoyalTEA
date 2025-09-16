@@ -37,14 +37,17 @@ body, html {
   align-items: center;
   background: #fff; 
   padding: 12px 0;
-  /* border-top: 1px solid rgba(0,0,0,0.06); */
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
   z-index: 0;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+
+  /* ✅ Add safe area padding for iPhones */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
 }
+
 
 .nav-item {
   position: relative;

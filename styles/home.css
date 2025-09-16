@@ -277,10 +277,12 @@ button, input, select, textarea {
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   width: 100%;
-  height: 109px;
+  min-height: 140px;
   display: flex;
+  flex-direction: column;  /* 👈 stack children vertically */
   justify-content: center;
   align-items: center;
+  padding: 16px;
 }
 
 .beans-title {
@@ -295,7 +297,9 @@ button, input, select, textarea {
 .beans-visual {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
+  justify-content: center; /* 👈 keep stars + count centered */
+  width: 100%;
 }
 
 /* Beans Total label outside the card */
@@ -520,4 +524,37 @@ button, input, select, textarea {
 .charity-sub {
   font-size: 0.9rem;
   color: #fff;
+}
+
+.stamp {
+  width: 24px;
+  height: 24px;
+  background-image: url('/images/star-empty.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+
+
+/* Reusable cup = green star */
+.stamp.reusable {
+  background: url('/images/green_star.svg') center/contain no-repeat;
+}
+
+/* Non-reusable cup = red star */
+.stamp.non-reusable {
+  background: url('/images/red_star.svg') center/contain no-repeat;
+}
+
+.co2-saved-text {
+  margin-top: 25px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.co2-saved-text strong {
+  color: #00ff88;
 }

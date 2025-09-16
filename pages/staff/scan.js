@@ -4,15 +4,15 @@ import QrScanner from "qr-scanner";
 
 export default function StaffScan() {
   const videoRef = useRef(null);
-  const [message, setMessage] = useState("Ready to scan...");
+  const [message, setMessage] = useState("Please select cup type to start scanning...");
   const lockRef = useRef(false);
   const scannerRef = useRef(null);
 
-  // ✅ Staff choice
-  const [reusable, setReusable] = useState(false);
+  // ✅ Staff choice: null until selected
+  const [reusable, setReusable] = useState(null);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || reusable === null) return; // wait until staff selects
 
     const scanner = new QrScanner(
       videoRef.current,
@@ -29,7 +29,7 @@ export default function StaffScan() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               ...parsed,
-              reusable, // add reusable flag
+              reusable, // true = reusable cup, false = disposable
             }),
           });
 
@@ -72,36 +72,44 @@ export default function StaffScan() {
     return () => {
       scanner.stop();
     };
-  }, []); // 👈 run only once
+  }, [reusable]); // 👈 re-run when staff changes choice
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold mb-4">Scan Customer QR</h1>
       <p className="mb-4 text-gray-600">{message}</p>
 
-      {/* ✅ Staff toggle */}
+      {/* ✅ Staff must pick one before scanning */}
       <div className="mb-4 flex items-center gap-6">
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            checked={!reusable}
-            onChange={() => setReusable(false)}
+            checked={reusable === false}
+            onChange={() => {
+              setReusable(false);
+              setMessage("Disposable cup selected. Camera ready...");
+            }}
           />
           Disposable Cup
         </label>
         <label className="flex items-center gap-2">
           <input
             type="radio"
-            checked={reusable}
-            onChange={() => setReusable(true)}
+            checked={reusable === true}
+            onChange={() => {
+              setReusable(true);
+              setMessage("Reusable cup ♻️ selected. Camera ready...");
+            }}
           />
           Reusable Cup ♻️
         </label>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow flex flex-col items-center">
-        <video ref={videoRef} className="w-full max-w-md rounded-lg" />
-      </div>
+      {reusable !== null && (
+        <div className="bg-white p-4 rounded-xl shadow flex flex-col items-center">
+          <video ref={videoRef} className="w-full max-w-md rounded-lg" />
+        </div>
+      )}
 
       <StaffBottomNav />
     </div>
