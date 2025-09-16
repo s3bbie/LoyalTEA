@@ -36,31 +36,36 @@ body, html {
   justify-content: space-around;
   align-items: center;
   background: #fff;
+  padding: 12px 0;                 /* base padding */
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  z-index: 100; /* keep it above content */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-
-  /* ✅ Safe-area support for iPhones */
-  padding: 12px 0 calc(12px + env(safe-area-inset-bottom)) 0;
-  padding: 12px 0 calc(12px + constant(safe-area-inset-bottom)) 0; /* legacy iOS 11 */
+  z-index: 100;                    /* keep it above content */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-/* Extend the white background into the safe area */
-.bottom-nav::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: env(safe-area-inset-bottom);
-  height: constant(safe-area-inset-bottom); /* legacy */
-  background: #fff;
-  pointer-events: none;
-}
+/* iOS safe-area support (+ legacy constant()) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-nav {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    /* legacy iOS 11 */
+    padding-bottom: calc(12px + constant(safe-area-inset-bottom));
+  }
 
+  /* Extend the white background into the safe area */
+  .bottom-nav::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: env(safe-area-inset-bottom);
+    height: constant(safe-area-inset-bottom); /* legacy */
+    background: #fff;
+    pointer-events: none;
+  }
+}
 
 
 .nav-item {
@@ -322,5 +327,5 @@ body, html {
 }
 
 .rounded-b-3xl {
-  border-radius: 0;
+  border-radius: none;
 }
