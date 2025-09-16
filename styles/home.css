@@ -45,6 +45,7 @@ button, input, select, textarea {
   gap: 16px;
   justify-content: space-between;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .welcome-text {
@@ -234,7 +235,6 @@ button, input, select, textarea {
 
 .use-btn {
   width: 100%;
-  margin: 24px 0 24px 0;
   display: block;
   background: #951662;
   color: #fff;
@@ -459,7 +459,7 @@ button, input, select, textarea {
 
 .qr-box {
   overflow: hidden;
-  max-height: 160px; /* just button height */
+  max-height: 130px; /* just button height */
   transition: max-height 0.4s ease, padding 0.3s ease;
 }
 
@@ -502,3 +502,45 @@ button, input, select, textarea {
 }
 
 
+.charity-btn {
+  flex: 1;
+  background-color: #fdd835; /* Marie Curie yellow */
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  cursor: default;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 20px;
+  min-height: 120px;
+
+  /* Logo as background, aligned right */
+  background: #fdd835 url(../public/images/charity.jpg) no-repeat right 20px center;
+  background-size: cover; /* fills the block completely */
+  background-position: center right; /* stays on the right */
+
+
+}
+
+.charity-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.charity-amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.charity-sub {
+  font-size: 0.9rem;
+  color: #fff;
+}

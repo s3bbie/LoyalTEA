@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import { supabase } from "../utils/supabaseClient";
 import { QRCodeCanvas } from "qrcode.react";
+import DonationCard from "../components/DonationCard";
 
 function IntroModal({ onClose }) {
   return (
@@ -133,10 +134,13 @@ function Home({ user }) {
               </div>
             </div>
           </div>
-
+{/* ✅ Collect Stamps Button with expandable QR 
           <div className="action-section">
             <button className="menu-btn" id="menuBtn">Canteen Menu</button>
-          </div>
+          </div> */}
+
+          <DonationCard />
+
         </div>
 
         {showIntro && <IntroModal onClose={handleCloseIntro} />}
