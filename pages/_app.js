@@ -12,6 +12,7 @@ import { useRouter } from "next/router";
 import BottomNav from "../components/BottomNav";
 import StaffBottomNav from "../components/StaffBottomNav"; // 👈 import staff nav
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next"; // 👈 import Speed Insights
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function App({ Component, pageProps }) {
       <Component {...pageProps} />
       {showNav && (isStaffPage ? <StaffBottomNav /> : <BottomNav />)}
       <Analytics />
+      <SpeedInsights /> {/* 👈 added here */}
     </>
   );
 }
