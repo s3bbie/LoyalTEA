@@ -1,3 +1,4 @@
+// pages/api/stamp.js
 import { supabaseAdmin } from "../../utils/supabaseAdmin";
 
 export default async function handler(req, res) {
@@ -13,12 +14,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing userId" });
     }
 
-    // fetch user
-    const { data: userData, error: fetchError } = await supabaseAdmin
+    // Try fetch user by id first, then fallback to username
+    let { data: userData, error: fetchError } = await supabaseAdmin
       .from("users")
-      .select("stamp_count, username")
+      .select("id, stamp_count, username")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
+    if (!userData) {
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .select("id, stamp_count, username")
+        .eq("username", userId)
+        .maybeSingle();
+
+      userData = data;
+      fetchError = error;
+    }
 
     if (fetchError || !userData) {
       console.error("User fetch error:", fetchError);
@@ -35,17 +47,17 @@ export default async function handler(req, res) {
 
       const newCount = (userData.stamp_count || 0) + 1;
 
-      // update user stamp count (for badge/quick display)
+      // Update user quick display count
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })
-        .eq("id", userId);
+        .eq("id", userData.id);
 
-      // log in stamps history with reusable flag
+      // Log into stamps table
       await supabaseAdmin.from("stamps").insert([
         {
-          user_id: userId,
-          reusable: reusable === true, // 👈 ensure boolean
+          user_id: userData.id,
+          reusable: reusable === true,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -69,19 +81,18 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Missing rewardId" });
       }
 
-      // deduct 9 stamps
       const newCount = userData.stamp_count - 9;
+
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })
-        .eq("id", userId);
+        .eq("id", userData.id);
 
-      // insert into redeems WITH reusable choice
       const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
         {
-          user_id: userId,
+          user_id: userData.id,
           reward_id: rewardId,
-          reusable: reusable === true, // 👈 NEW: track cup type for reward
+          reusable: reusable === true,
           created_at: new Date().toISOString(),
         },
       ]);

@@ -30,79 +30,82 @@ function IntroModal({ onClose }) {
 function Home({ user }) {
   const [stampCount, setStampCount] = useState(0);
   const [stamps, setStamps] = useState([]);
+  const [dbUserId, setDbUserId] = useState(null); // ✅ Supabase users.id
   const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
 
   useEffect(() => {
-  if (!localStorage.getItem("introSeen")) {
-    setShowIntro(true);
-  }
-
-  const fetchData = async () => {
-    // 1. Get stamp_count
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("stamp_count")
-      .eq("id", user.sub)
-      .single();
-
-    if (!userError && userData) {
-      setStampCount(userData.stamp_count || 0);
-    } else {
-      console.error("⚠️ Error fetching stamp_count:", userError?.message);
+    if (!localStorage.getItem("introSeen")) {
+      setShowIntro(true);
     }
 
-    // 2. Fetch stamps for reusable stats
-    const { data: stampsData, error: stampsError } = await supabase
-      .from("stamps")
-      .select("*")
-      .eq("user_id", user.sub);
+    const fetchData = async () => {
+      // 1. Fetch full user row (to get Supabase id)
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id, stamp_count")
+        .eq("username", user.username) // match on username
+        .single();
 
-    if (!stampsError && stampsData) {
-      setStamps(stampsData);
+      if (!userError && userData) {
+        setDbUserId(userData.id); // ✅ store Supabase id
+        setStampCount(userData.stamp_count || 0);
+      } else {
+        console.error("⚠️ Error fetching user row:", userError?.message);
+      }
+
+      // 2. Fetch stamps for reusable stats
+      if (userData?.id) {
+        const { data: stampsData, error: stampsError } = await supabase
+          .from("stamps")
+          .select("*")
+          .eq("user_id", userData.id);
+
+        if (!stampsError && stampsData) {
+          setStamps(stampsData);
+        }
+      }
+    };
+
+    fetchData();
+
+    // ✅ Realtime subscriptions
+    if (user.username) {
+      const channel = supabase
+        .channel("home-live")
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "users",
+            filter: `username=eq.${user.username}`,
+          },
+          (payload) => {
+            console.log("📡 stamp_count updated:", payload.new.stamp_count);
+            setStampCount(payload.new.stamp_count);
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "stamps",
+            filter: `user_id=eq.${dbUserId}`,
+          },
+          (payload) => {
+            console.log("📡 New stamp added:", payload.new);
+            setStamps((prev) => [...prev, payload.new]);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-  };
-
-  fetchData();
-
-  // ✅ Realtime subscriptions
-  const channel = supabase
-    .channel("home-live")
-    // Listen for user stamp_count updates
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "users",
-        filter: `id=eq.${user.sub}`,
-      },
-      (payload) => {
-        console.log("📡 stamp_count updated:", payload.new.stamp_count);
-        setStampCount(payload.new.stamp_count);
-      }
-    )
-    // Listen for new stamps
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "stamps",
-        filter: `user_id=eq.${user.sub}`,
-      },
-      (payload) => {
-        console.log("📡 New stamp added:", payload.new);
-        setStamps((prev) => [...prev, payload.new]);
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [user.sub]);
-
+  }, [user.username, dbUserId]);
 
   // ✅ reusable count still comes from stamps
   const reusableCount = stamps.filter((s) => s.reusable).length;
@@ -124,40 +127,36 @@ function Home({ user }) {
           <h2 className="beans-title-outside">Total Stamps</h2>
 
           <div className="action-section">
-<section className="beans-card">
-  <div className="beans-visual">
-    <div className="beans-count">
-      <span>{stampCount}</span>/<span>9</span>
-    </div>
-    <div className="stamp-grid" id="stampGrid">
-      {[...Array(9)].map((_, i) => {
-  if (i < stampCount) {
-    return (
-      <div
-        key={i}
-        className={`stamp ${stamps[i]?.reusable ? "reusable" : "non-reusable"}`}
-      />
-    );
-  } else {
-    return <div key={i} className="stamp" />;
-  }
-})}
+            <section className="beans-card">
+              <div className="beans-visual">
+                <div className="beans-count">
+                  <span>{stampCount}</span>/<span>9</span>
+                </div>
+                <div className="stamp-grid" id="stampGrid">
+                  {[...Array(9)].map((_, i) => {
+                    if (i < stampCount) {
+                      return (
+                        <div
+                          key={i}
+                          className={`stamp ${stamps[i]?.reusable ? "reusable" : "non-reusable"}`}
+                        />
+                      );
+                    } else {
+                      return <div key={i} className="stamp" />;
+                    }
+                  })}
+                </div>
+              </div>
 
-    </div>
-  </div>
-
-  {/* ✅ CO₂ text below the stars */}
-  <div className="co2-saved-text">
-    {reusableCount > 0 ? (
-      <p>🌍 You’ve saved <strong>{co2Saved}g CO₂</strong> by using reusable cups!</p>
-    ) : (
-      <p>Start using reusable cups to save CO₂ 🌱</p>
-    )}
-  </div>
-</section>
-
-
-
+              {/* ✅ CO₂ text below the stars */}
+              <div className="co2-saved-text">
+                {reusableCount > 0 ? (
+                  <p>🌍 You’ve saved <strong>{co2Saved}g CO₂</strong> by using reusable cups!</p>
+                ) : (
+                  <p>Start using reusable cups to save CO₂ 🌱</p>
+                )}
+              </div>
+            </section>
           </div>
 
           {/* ✅ Collect Stamps Button with expandable QR */}
@@ -169,29 +168,28 @@ function Home({ user }) {
               </div>
             </button>
 
-            <div className="qr-content">
-              <button
-                className="qr-close-inline"
-                onClick={() => setShowQR(false)}
-              />
-              <div className="qr-display">
-                <QRCodeCanvas
-                  value={JSON.stringify({ mode: "stamp", userId: user.sub })}
-                  size={160}
+            {dbUserId && (
+              <div className="qr-content">
+                <button
+                  className="qr-close-inline"
+                  onClick={() => setShowQR(false)}
                 />
-                <p>Show this QR Code to staff to <br/>collect your stamp</p>
+                <div className="qr-display">
+                  <QRCodeCanvas
+                    value={JSON.stringify({ mode: "stamp", userId: dbUserId })} // ✅ REAL Supabase id
+                    size={160}
+                  />
+                  <p>Show this QR Code to staff to <br/>collect your stamp</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <DonationCard />
-
           <RecyclingStats />
-
-
         </div>
 
-        {showIntro && <IntroModal onClose={handleCloseIntro} />}
+        {showIntro && <IntroModal onClose={() => setShowIntro(false)} />}
         <BottomNav stampCount={stamps.length} />
       </div>
     </>
