@@ -15,52 +15,56 @@ export default function StaffScan() {
     if (!videoRef.current || reusable === null) return; // wait until staff selects
 
     const scanner = new QrScanner(
-      videoRef.current,
-      async (result) => {
-        if (!result?.data || lockRef.current) return;
-        lockRef.current = true;
+  videoRef.current,
+  async (result) => {
+    if (!result?.data || lockRef.current) return;
+    lockRef.current = true;
 
-        try {
-          const parsed = JSON.parse(result.data);
+    // ✅ Capture staff choice at scan time
+    const cupChoice = reusable;
 
-          // ✅ Send QR data + staff choice
-          const response = await fetch("/api/stamp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...parsed,
-              reusable, // true = reusable cup, false = disposable
-            }),
-          });
+    try {
+      const parsed = JSON.parse(result.data);
 
-          const apiResult = await response.json();
+      // ✅ Always send the locked-in choice
+      const response = await fetch("/api/stamp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...parsed,
+          reusable: cupChoice, // 🔒 ensures correct flag
+        }),
+      });
 
-          if (response.ok) {
-            setMessage(apiResult.message);
-          } else {
-            setMessage(`❌ ${apiResult.error}`);
-          }
-        } catch (err) {
-          console.error("Scan error:", err);
-          setMessage("❌ Invalid QR or database error");
-        } finally {
-          scanner.stop();
-          setTimeout(() => {
-            lockRef.current = false;
-            setMessage("Ready to scan...");
-            scanner.start().catch((err) => {
-              console.error("Camera restart error:", err);
-              setMessage("❌ Unable to restart camera");
-            });
-          }, 3000);
-        }
-      },
-      {
-        preferredCamera: "environment",
-        highlightScanRegion: true,
-        highlightCodeOutline: true,
+      const apiResult = await response.json();
+
+      if (response.ok) {
+        setMessage(apiResult.message);
+      } else {
+        setMessage(`❌ ${apiResult.error}`);
       }
-    );
+    } catch (err) {
+      console.error("Scan error:", err);
+      setMessage("❌ Invalid QR or database error");
+    } finally {
+      scanner.stop();
+      setTimeout(() => {
+        lockRef.current = false;
+        setMessage("Ready to scan...");
+        scanner.start().catch((err) => {
+          console.error("Camera restart error:", err);
+          setMessage("❌ Unable to restart camera");
+        });
+      }, 3000);
+    }
+  },
+  {
+    preferredCamera: "environment",
+    highlightScanRegion: true,
+    highlightCodeOutline: true,
+  }
+);
+
 
     scanner.start().catch((err) => {
       console.error("Camera error:", err);
