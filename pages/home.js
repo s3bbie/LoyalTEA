@@ -169,20 +169,20 @@ function Home({ user }) {
             </button>
 
             {dbUserId && (
-              <div className="qr-content">
-                <button
-                  className="qr-close-inline"
-                  onClick={() => setShowQR(false)}
-                />
-                <div className="qr-display">
-<QRCodeCanvas
-    value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
-    size={160}
-  />
-                  <p>Show this QR Code to staff to <br/>collect your stamp</p>
-                </div>
-              </div>
-            )}
+  <div className="qr-content">
+    <button
+      className="qr-close-inline"
+      onClick={() => setShowQR(false)}
+    />
+    <div className="qr-display">
+      <QRCodeCanvas
+        value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
+        size={160}
+      />
+      <p>Show this QR Code to staff to <br/>collect your stamp</p>
+    </div>
+  </div>
+)}
           </div>
 
           <DonationCard />
