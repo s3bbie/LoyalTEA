@@ -50,12 +50,13 @@ console.log("Supabase error:", error);
       return res.status(500).json({ error: "Server misconfiguration" });
     }
 
-    // Create JWT
-    const token = jwt.sign(
-      { sub: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+// Create JWT with Supabase id as `userId`
+const token = jwt.sign(
+  { userId: user.id, username: user.username, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
 
 
 
