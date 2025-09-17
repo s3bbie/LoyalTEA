@@ -445,8 +445,9 @@ button, input, select, textarea {
 
 .qr-box {
   overflow: hidden;
-  max-height: 130px; /* just button height */
+  max-height: 110px; /* just button height */
   transition: max-height 0.4s ease, padding 0.3s ease;
+  margin-bottom: 16px;
 }
 
 .qr-box.open {
@@ -491,7 +492,7 @@ button, input, select, textarea {
 .charity-btn {
   flex: 1;
   background-color: #fdd835; /* Marie Curie yellow */
-  color: #fff;
+  color: #0053a6;
   border: none;
   border-radius: 15px;
   cursor: default;
@@ -522,22 +523,23 @@ button, input, select, textarea {
 .charity-amount {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #fff;
+  color: #0053a6;
   margin-bottom: 4px;
 }
 
 .charity-sub {
   font-size: 0.9rem;
-  color: #fff;
+  color: #0053a6;
 }
 
 .stamp {
   width: 24px;
   height: 24px;
-  background-image: url('/images/star-empty.png');
+  background-image: url(/images/star-empty.png);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  opacity: 0.3; /* 👈 makes empty stars faint */
 }
 
 
@@ -545,11 +547,13 @@ button, input, select, textarea {
 /* Reusable cup = green star */
 .stamp.reusable {
   background: url('/images/green_star.svg') center/contain no-repeat;
+  opacity: 1;
 }
 
 /* Non-reusable cup = red star */
 .stamp.non-reusable {
   background: url('/images/red_star.svg') center/contain no-repeat;
+  opacity: 1;
 }
 
 .co2-saved-text {
@@ -563,3 +567,33 @@ button, input, select, textarea {
 .co2-saved-text strong {
   color: #00ff88;
 }
+
+.tabs-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.tab-card {
+  flex: 1;
+  background: #951662; /* yellow like Marie Curie */
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  color: #fff;
+}
+
+.tab-card p {
+  margin: 0;
+}
+
+.tab-subtitle {
+  font-size: 14px;
+  font-weight: normal;
+  color: #fff;
+  margin-top: 4px;
+}
+

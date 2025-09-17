@@ -4,19 +4,37 @@ import { supabase } from "../utils/supabaseClient";
 export default function DonationCard() {
   const [totalDonations, setTotalDonations] = useState(0);
 
-  useEffect(() => {
-    async function fetchTotal() {
-      const { data, error } = await supabase
-        .from("donation_totals")
-        .select("total_amount")
-        .eq("id", 1)
-        .single();
+  const fetchTotal = async () => {
+    const { data, error } = await supabase
+      .from("donation_totals")
+      .select("total_amount")
+      .eq("id", 1)
+      .single();
 
-      if (!error && data) {
-        setTotalDonations(data.total_amount);
-      }
+    if (!error && data) {
+      setTotalDonations(data.total_amount);
     }
+  };
+
+  useEffect(() => {
     fetchTotal();
+
+    // ✅ Realtime subscription
+    const channel = supabase
+      .channel("donation-totals-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "donation_totals" },
+        (payload) => {
+          console.log("Donation total updated:", payload);
+          fetchTotal(); // refresh the total when data changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

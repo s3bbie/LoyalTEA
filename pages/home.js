@@ -7,6 +7,7 @@ import * as cookie from "cookie";
 import { supabase } from "../utils/supabaseClient";
 import { QRCodeCanvas } from "qrcode.react";
 import DonationCard from "../components/DonationCard";
+import RecyclingStats from "../components/RecyclingStats";
 
 function IntroModal({ onClose }) {
   return (
@@ -170,6 +171,10 @@ function Home({ user }) {
           </div>
 
           <DonationCard />
+
+          <RecyclingStats />
+
+
         </div>
 
         {showIntro && <IntroModal onClose={handleCloseIntro} />}
