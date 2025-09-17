@@ -175,8 +175,8 @@ function Home({ user }) {
                   onClick={() => setShowQR(false)}
                 />
                 <div className="qr-display">
-                  <QRCodeCanvas
-  value={JSON.stringify({ mode: "stamp", userId: user.userId })} // JWT should carry Supabase id
+<QRCodeCanvas
+  value={JSON.stringify({ mode: "stamp", userId: dbUserId })} // ✅ now uses Supabase UUID
   size={160}
 />
                   <p>Show this QR Code to staff to <br/>collect your stamp</p>
