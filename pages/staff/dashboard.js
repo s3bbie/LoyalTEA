@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../utils/supabaseClient";
 import StaffBottomNav from "../../components/StaffBottomNav";
 import { Gift, Ticket, Users, Star } from "lucide-react";
 
@@ -92,7 +91,8 @@ useEffect(() => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-bold mb-2">Top Redeemed Drinks</h2>
-{stats.topRedeemedDrinks.length > 0 ? (
+{stats.topRedeemedDrinks?.length > 0 ? (
+
   <ul className="text-sm text-gray-700">
     {stats.topRedeemedDrinks.map((drink, idx) => (
       <li key={idx} className="flex justify-between">
