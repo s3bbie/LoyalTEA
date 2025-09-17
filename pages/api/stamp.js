@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mode, userId, rewardId, reusable } = req.body; // ✅ pick up reusable
+    const { mode, userId, rewardId, reusable } = req.body;
     console.log("API /api/stamp hit:", { mode, userId, rewardId, reusable });
 
     if (!userId) {
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       await supabaseAdmin.from("stamps").insert([
         {
           user_id: userId,
-          reusable: reusable ?? false, // ✅ store staff choice
+          reusable: reusable === true, // 👈 ensure boolean
           created_at: new Date().toISOString(),
         },
       ]);
@@ -70,16 +70,18 @@ export default async function handler(req, res) {
       }
 
       // deduct 9 stamps
+      const newCount = userData.stamp_count - 9;
       await supabaseAdmin
         .from("users")
-        .update({ stamp_count: userData.stamp_count - 9 })
+        .update({ stamp_count: newCount })
         .eq("id", userId);
 
-      // insert into redeems (minimal)
+      // insert into redeems WITH reusable choice
       const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
         {
           user_id: userId,
           reward_id: rewardId,
+          reusable: reusable === true, // 👈 NEW: track cup type for reward
           created_at: new Date().toISOString(),
         },
       ]);
@@ -89,9 +91,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: redeemError.message });
       }
 
-      return res
-        .status(200)
-        .json({ message: `🎉 ${userData.username} redeemed a reward` });
+      return res.status(200).json({
+        message: reusable
+          ? `🎉 ${userData.username} redeemed a reward with a reusable cup!`
+          : `🎉 ${userData.username} redeemed a reward with a disposable cup.`,
+      });
     }
 
     return res.status(400).json({ error: "Invalid mode" });
