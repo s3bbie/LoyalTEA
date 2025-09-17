@@ -20,7 +20,8 @@ export default function StaffScan() {
 
         try {
           const parsed = JSON.parse(result.data);
-
+          console.log("Scanned QR payload:", parsed);
+          
           const response = await fetch("/api/stamp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

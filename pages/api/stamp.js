@@ -82,6 +82,8 @@ export default async function handler(req, res) {
       }
 
       const newCount = userData.stamp_count - 9;
+      
+      console.log("Looking up userId:", userId);
 
       await supabaseAdmin
         .from("users")

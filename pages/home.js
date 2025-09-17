@@ -176,9 +176,9 @@ function Home({ user }) {
                 />
                 <div className="qr-display">
 <QRCodeCanvas
-  value={JSON.stringify({ mode: "stamp", userId: dbUserId })} // ✅ now uses Supabase UUID
-  size={160}
-/>
+    value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
+    size={160}
+  />
                   <p>Show this QR Code to staff to <br/>collect your stamp</p>
                 </div>
               </div>
