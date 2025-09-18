@@ -8,6 +8,7 @@ import { supabase } from "../utils/supabaseClient";
 import { QRCodeCanvas } from "qrcode.react";
 import DonationCard from "../components/DonationCard";
 import RecyclingStats from "../components/RecyclingStats";
+import Co2Equivalents from "../components/Co2Equivalents";
 
 function IntroModal({ onClose }) {
   const handleClose = () => {
@@ -163,12 +164,12 @@ const { data: stampsData, error: stampsError } = await supabase
 
               {/* ✅ CO₂ text below the stars */}
               <div className="co2-saved-text">
-                {reusableCount > 0 ? (
-                  <p>🌍 You’ve saved <strong>{co2Saved}g CO₂</strong> by using reusable cups!</p>
-                ) : (
-                  <p>Start using reusable cups to save CO₂ 🌱</p>
-                )}
-              </div>
+  {reusableCount > 0 ? (
+    <Co2Equivalents co2Saved={co2Saved} />
+  ) : (
+    <p>Start using reusable cups to save CO₂ 🌱</p>
+  )}
+</div>
             </section>
           </div>
 
