@@ -62,10 +62,12 @@ function Home({ user }) {
 
       // 2. Fetch stamps for reusable stats
       if (userData?.id) {
-        const { data: stampsData, error: stampsError } = await supabase
-          .from("stamps")
-          .select("*")
-          .eq("user_id", userData.id);
+const { data: stampsData, error: stampsError } = await supabase
+  .from("stamps")
+  .select("*")
+  .eq("user_id", userData.id)
+  .order("created_at", { ascending: true }); // ✅ oldest → newest
+
 
         if (!stampsError && stampsData) {
           setStamps(stampsData);
@@ -102,7 +104,12 @@ function Home({ user }) {
           },
           (payload) => {
             console.log("📡 New stamp added:", payload.new);
-            setStamps((prev) => [...prev, payload.new]);
+            setStamps((prev) =>
+  [...prev, payload.new].sort(
+    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+  )
+);
+
           }
         )
         .subscribe();
