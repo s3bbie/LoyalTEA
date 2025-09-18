@@ -557,7 +557,6 @@ button, input, select, textarea {
 }
 
 .co2-saved-text {
-  margin-top: 25px;
   text-align: center;
   font-size: 0.8rem;
   color: #ffffff;
@@ -571,7 +570,6 @@ button, input, select, textarea {
 .tabs-row {
   display: flex;
   gap: 16px;
-  margin-top: 16px;
 }
 
 .tab-card {
