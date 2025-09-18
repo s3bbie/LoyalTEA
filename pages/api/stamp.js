@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       await supabaseAdmin.from("stamps").insert([
         {
           user_id: userData.id,
-          reusable: isReusable, // ✅ always real boolean
+          reusable: isReusable, // ✅ always boolean
           created_at: new Date().toISOString(),
         },
       ]);
@@ -86,16 +86,21 @@ export default async function handler(req, res) {
 
       const newCount = userData.stamp_count - 9;
 
+      // Update stamp count
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })
         .eq("id", userData.id);
 
+      // ✅ Clear stamps table entries for this user after redeem
+      await supabaseAdmin.from("stamps").delete().eq("user_id", userData.id);
+
+      // Log into redeems table
       const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
         {
           user_id: userData.id,
           reward_id: rewardId,
-          reusable: isReusable, // ✅ always real boolean
+          reusable: isReusable,
           created_at: new Date().toISOString(),
         },
       ]);
