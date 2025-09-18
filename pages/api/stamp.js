@@ -15,19 +15,23 @@ export default async function handler(req, res) {
     }
 
     // Coerce reusable into a real boolean
-    const isReusable = reusable === true || reusable === "true";
+    const isReusable =
+      reusable === true ||
+      reusable === "true" ||
+      reusable === 1 ||
+      reusable === "1";
 
     // Try fetch user by id first, then fallback to username
     let { data: userData, error: fetchError } = await supabaseAdmin
       .from("users")
-      .select("id, stamp_count, total_stamps_collected, username")
+      .select("id, stamp_count, total_stamps_collected, total_co2_saved, username")
       .eq("id", userId)
       .maybeSingle();
 
     if (!userData) {
       const { data, error } = await supabaseAdmin
         .from("users")
-        .select("id, stamp_count, total_stamps_collected, username")
+        .select("id, stamp_count, total_stamps_collected, total_co2_saved, username")
         .eq("username", userId)
         .maybeSingle();
 
@@ -49,16 +53,40 @@ export default async function handler(req, res) {
       }
 
       const newCount = (userData.stamp_count || 0) + 1;
-      const newTotal = (userData.total_stamps_collected || 0) + 1;
+      const newTotalStamps = (userData.total_stamps_collected || 0) + 1;
 
-      // Update user quick display count + lifetime total
-      await supabaseAdmin
+      // ✅ Add CO₂ savings (15g per reusable cup, 0g for disposable)
+      const co2Delta = isReusable ? 15 : 0;
+      const prevCo2 = userData.total_co2_saved ?? 0; // handle null properly
+      const newTotalCo2 = prevCo2 + co2Delta;
+
+      console.log("♻️ Calculating CO2:", {
+  reusable,
+  isReusable,
+  co2Delta,
+  prev: userData.total_co2_saved,
+  newTotalCo2,
+});
+
+      // Update user quick display count + totals
+      const { error: updateError } = await supabaseAdmin
         .from("users")
         .update({
           stamp_count: newCount,
-          total_stamps_collected: newTotal,
+          total_stamps_collected: newTotalStamps,
+          total_co2_saved: newTotalCo2,
         })
         .eq("id", userData.id);
+
+      if (updateError) {
+        console.error("❌ Failed to update user totals:", updateError);
+      } else {
+        console.log("✅ Updated user totals:", {
+          newCount,
+          newTotalStamps,
+          newTotalCo2,
+        });
+      }
 
       // Log into stamps table
       await supabaseAdmin.from("stamps").insert([
@@ -71,8 +99,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         message: isReusable
-          ? `✅ Added 1 reusable stamp for ${userData.username} (${newCount}/9, total ${newTotal})`
-          : `✅ Added 1 disposable stamp for ${userData.username} (${newCount}/9, total ${newTotal})`,
+          ? `✅ Added 1 reusable stamp for ${userData.username} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`
+          : `✅ Added 1 disposable stamp for ${userData.username} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`,
       });
     }
 
@@ -90,7 +118,7 @@ export default async function handler(req, res) {
 
       const newCount = userData.stamp_count - 9;
 
-      // Update stamp count (lifetime total stays unchanged)
+      // Update stamp count (lifetime totals stay unchanged)
       await supabaseAdmin
         .from("users")
         .update({ stamp_count: newCount })

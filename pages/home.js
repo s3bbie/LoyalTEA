@@ -12,18 +12,20 @@ import Co2Equivalents from "../components/Co2Equivalents";
 
 function IntroModal({ onClose }) {
   const handleClose = () => {
-    localStorage.setItem("introSeen", "true"); // ✅ remember dismissal
+    localStorage.setItem("introSeen", "true");
     onClose();
   };
 
   return (
     <div className="modal">
       <div className="modal-content">
-        <span className="close" onClick={handleClose}>×</span>
+        <span className="close" onClick={handleClose}>
+          ×
+        </span>
         <h2>Welcome to LoyalTEA ☕</h2>
         <p>
-          Collect stamps every time you buy at the canteen. 
-          Once you reach 9, redeem a free drink 🎉
+          Collect stamps every time you buy at the canteen. Once you reach 9,
+          redeem a free drink 🎉
         </p>
         <button className="btn-primary" onClick={handleClose}>
           Got it!
@@ -33,13 +35,13 @@ function IntroModal({ onClose }) {
   );
 }
 
-
 function Home({ user }) {
   const [stampCount, setStampCount] = useState(0);
   const [stamps, setStamps] = useState([]);
-  const [dbUserId, setDbUserId] = useState(null); // ✅ Supabase users.id
+  const [dbUserId, setDbUserId] = useState(null);
   const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [totalCo2, setTotalCo2] = useState(0);
 
   useEffect(() => {
     if (!localStorage.getItem("introSeen")) {
@@ -47,28 +49,26 @@ function Home({ user }) {
     }
 
     const fetchData = async () => {
-      // 1. Fetch full user row (to get Supabase id)
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("id, stamp_count")
-        .eq("username", user.username) // match on username
+        .select("id, stamp_count, total_co2_saved")
+        .eq("username", user.username)
         .single();
 
       if (!userError && userData) {
-        setDbUserId(userData.id); // ✅ store Supabase id
+        setDbUserId(userData.id);
         setStampCount(userData.stamp_count || 0);
+        setTotalCo2(userData.total_co2_saved ?? 0);
       } else {
         console.error("⚠️ Error fetching user row:", userError?.message);
       }
 
-      // 2. Fetch stamps for reusable stats
       if (userData?.id) {
-const { data: stampsData, error: stampsError } = await supabase
-  .from("stamps")
-  .select("*")
-  .eq("user_id", userData.id)
-  .order("created_at", { ascending: true }); // ✅ oldest → newest
-
+        const { data: stampsData, error: stampsError } = await supabase
+          .from("stamps")
+          .select("*")
+          .eq("user_id", userData.id)
+          .order("created_at", { ascending: true });
 
         if (!stampsError && stampsData) {
           setStamps(stampsData);
@@ -78,7 +78,7 @@ const { data: stampsData, error: stampsError } = await supabase
 
     fetchData();
 
-    // ✅ Realtime subscriptions
+    // ✅ Realtime subscriptions for all user updates
     if (user.username) {
       const channel = supabase
         .channel("home-live")
@@ -91,8 +91,9 @@ const { data: stampsData, error: stampsError } = await supabase
             filter: `username=eq.${user.username}`,
           },
           (payload) => {
-            console.log("📡 stamp_count updated:", payload.new.stamp_count);
+            console.log("📡 user row updated:", payload.new);
             setStampCount(payload.new.stamp_count);
+            setTotalCo2(payload.new.total_co2_saved ?? 0);
           }
         )
         .on(
@@ -106,11 +107,10 @@ const { data: stampsData, error: stampsError } = await supabase
           (payload) => {
             console.log("📡 New stamp added:", payload.new);
             setStamps((prev) =>
-  [...prev, payload.new].sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  )
-);
-
+              [...prev, payload.new].sort(
+                (a, b) => new Date(a.created_at) - new Date(b.created_at)
+              )
+            );
           }
         )
         .subscribe();
@@ -121,13 +121,11 @@ const { data: stampsData, error: stampsError } = await supabase
     }
   }, [user.username, dbUserId]);
 
-  // ✅ reusable count still comes from stamps
-  const reusableCount = stamps.filter((s) => s.reusable).length;
-  const co2Saved = reusableCount * 15; // grams saved
-
   return (
     <>
-      <Head><title>Home – LoyalTEA</title></Head>
+      <Head>
+        <title>Home – LoyalTEA</title>
+      </Head>
 
       <div id="pageWrapper">
         <div className="home-container">
@@ -152,7 +150,9 @@ const { data: stampsData, error: stampsError } = await supabase
                       return (
                         <div
                           key={i}
-                          className={`stamp ${stamps[i]?.reusable ? "reusable" : "non-reusable"}`}
+                          className={`stamp ${
+                            stamps[i]?.reusable ? "reusable" : "non-reusable"
+                          }`}
                         />
                       );
                     } else {
@@ -162,18 +162,13 @@ const { data: stampsData, error: stampsError } = await supabase
                 </div>
               </div>
 
-              {/* ✅ CO₂ text below the stars */}
-              <div className="co2-saved-text">
-  {reusableCount > 0 ? (
-    <Co2Equivalents co2Saved={co2Saved} />
-  ) : (
-    <p>Start using reusable cups to save CO₂ 🌱</p>
-  )}
-</div>
+              {/* ✅ Lifetime CO₂ saved */}
+              <div className="co2-saved-text mt-3 text-center">
+                <Co2Equivalents co2Saved={totalCo2} />
+              </div>
             </section>
           </div>
 
-          {/* ✅ Collect Stamps Button with expandable QR */}
           <div className={`qr-box ${showQR ? "open" : ""}`}>
             <button className="use-btn" onClick={() => setShowQR(!showQR)}>
               <div className="button-text-container">
@@ -183,20 +178,23 @@ const { data: stampsData, error: stampsError } = await supabase
             </button>
 
             {dbUserId && (
-  <div className="qr-content">
-    <button
-      className="qr-close-inline"
-      onClick={() => setShowQR(false)}
-    />
-    <div className="qr-display">
-      <QRCodeCanvas
-        value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
-        size={160}
-      />
-      <p>Show this QR Code to staff to <br/>collect your stamp</p>
-    </div>
-  </div>
-)}
+              <div className="qr-content">
+                <button
+                  className="qr-close-inline"
+                  onClick={() => setShowQR(false)}
+                />
+                <div className="qr-display">
+                  <QRCodeCanvas
+                    value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
+                    size={160}
+                  />
+                  <p>
+                    Show this QR Code to staff to <br />
+                    collect your stamp
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <DonationCard />
