@@ -10,22 +10,28 @@ import DonationCard from "../components/DonationCard";
 import RecyclingStats from "../components/RecyclingStats";
 
 function IntroModal({ onClose }) {
+  const handleClose = () => {
+    localStorage.setItem("introSeen", "true"); // ✅ remember dismissal
+    onClose();
+  };
+
   return (
     <div className="modal">
       <div className="modal-content">
-        <span className="close" onClick={onClose}>×</span>
+        <span className="close" onClick={handleClose}>×</span>
         <h2>Welcome to LoyalTEA ☕</h2>
         <p>
           Collect stamps every time you buy at the canteen. 
           Once you reach 9, redeem a free drink 🎉
         </p>
-        <button className="btn-primary" onClick={onClose}>
+        <button className="btn-primary" onClick={handleClose}>
           Got it!
         </button>
       </div>
     </div>
   );
 }
+
 
 function Home({ user }) {
   const [stampCount, setStampCount] = useState(0);
