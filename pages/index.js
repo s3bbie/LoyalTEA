@@ -40,7 +40,7 @@ export default function Login() {
       {/* Top-right staff login button */}
       <div className="staff-login-btn">
         <Link href="/staff/login" className="btn-primary">
-          Staff Login
+          Staff Only
         </Link>
       </div>
 

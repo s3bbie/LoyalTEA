@@ -1,6 +1,8 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import Link from "next/link";
+
 
 export default function StaffLogin() {
   const router = useRouter();
@@ -47,6 +49,13 @@ export default function StaffLogin() {
       <Head>
         <title>Staff Login – LoyalTEA</title>
       </Head>
+<div className="user-login-btn">
+  <Link href="/" className="btn-secondary">
+    Back to User Login
+  </Link>
+</div>
+
+
       <div className="auth-container login">
         <div className="form-wrapper">
           <div className="flex justify-center">
@@ -54,6 +63,8 @@ export default function StaffLogin() {
             <img src="/images/logo.png" alt="LoyalTEA Logo" />
           </div>
 </div>
+
+
 
           <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">

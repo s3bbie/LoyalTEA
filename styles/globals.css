@@ -201,6 +201,27 @@ body, html {
   padding: 0 14px;
 }
 
+.text-gray-700 {
+  padding: 0 20px 0 20px;
+}
+
+.rounded-b-3xl {
+  border-radius: 0;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 8px 8px 8px 8px;
+  background-color: #F7F5EA;
+  color: #79142a;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
 .lt-btn-primary {
   background: #91204D; 
   color: #fff;
@@ -289,6 +310,13 @@ body, html {
 }
 
 .staff-login-btn {
+  position: fixed;   /* pins it to the screen */
+  top: 20px;         /* distance from top */
+  right: 20px;       /* distance from right */
+  z-index: 1000;     /* keeps it above everything else */
+}
+
+.user-login-btn {
   position: fixed;   /* pins it to the screen */
   top: 20px;         /* distance from top */
   right: 20px;       /* distance from right */

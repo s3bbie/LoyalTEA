@@ -17,6 +17,7 @@
 .logo img {
   width: 120px;
   height: auto;
+  margin: 0 auto;
 }
 
 /* Form fields */
@@ -68,16 +69,18 @@
 /* Sign In button */
 .btn-primary {
   width: 100%;
-  padding: 14px;
+  padding: 8px 8px 8px 8px;
   background-color: #F7F5EA;
   color: #79142a;
   border: none;
-  border-radius: 15px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
 }
+
+
 
 input {
   color: white;
