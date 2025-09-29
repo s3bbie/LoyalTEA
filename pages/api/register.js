@@ -1,63 +1,36 @@
 // pages/api/register.js
-import { supabase } from "@/utils/supabaseClient";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
-
+import { supabaseAdmin } from "@/utils/supabaseAdmin";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).end();
 
   const { username, pin } = req.body;
   if (!username || !pin) {
     return res.status(400).json({ error: "Username and PIN required" });
   }
 
+  if (pin.length < 6) {
+    return res.status(400).json({ error: "PIN must be at least 6 digits long" });
+  }
+
   try {
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", username)
-      .single();
+    const email = `${username}@loyaltea.com`;
 
-    if (existingUser) {
-      return res.status(400).json({ error: "Username already taken" });
-    }
-
-    // Hash the PIN
-    const pinHash = await bcrypt.hash(pin, 10);
-
-    // Insert into Supabase
-    const { data, error } = await supabase
-      .from("users")
-      .insert([{ username, pin_hash: pinHash, stamp_count: 0 }])
-      .select()
-      .single();
+    // ✅ confirm email right away
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: pin,
+      email_confirm: true,
+    });
 
     if (error) throw error;
 
-    // Create JWT
-    const token = jwt.sign(
-      { sub: data.id, username: data.username },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    // Set cookie
-    res.setHeader("Set-Cookie", cookie.serialize("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    }));
+    // ✅ profiles is already auto-populated via trigger
+    await supabaseAdmin.from("profiles").update({ username }).eq("id", data.user.id);
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Registration error:", err.message);
-    return res.status(500).json({ error: "Registration failed" });
+    console.error("Full Supabase error:", JSON.stringify(err, null, 2));
+    return res.status(500).json({ error: "Registration failed", details: err.message });
   }
 }
