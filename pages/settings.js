@@ -5,26 +5,35 @@ import { useRouter } from "next/router";
 import BottomNav from "../components/BottomNav";
 import packageInfo from "../package.json";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 
-function SettingsPage({ user }) {
-  const [askDelete, setAskDelete] = useState(false);
-
-  // ✅ Always initialise with a number
-  const [stampCount, setStampCount] = useState(0);
-
+function SettingsPage({ initialUser, initialStampCount }) {
+  const { session, isLoading } = useSessionContext();
   const router = useRouter();
 
-  // fetch user's stamp count
+  const user = session?.user || initialUser;
+  const [askDelete, setAskDelete] = useState(false);
+  const [stampCount, setStampCount] = useState(initialStampCount || 0);
+
+  // 🚦 redirect only if not loading and no user
   useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/");
+    }
+  }, [isLoading, user, router]);
+
+  // fetch user's stamp count live
+  useEffect(() => {
+    if (!user) return;
+
     const fetchStampCount = async () => {
       const { data, error } = await supabase
-        .from("users")
+        .from("profiles")
         .select("stamp_count")
-        .eq("id", user.sub)
-        .single();
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (!error && data) {
         setStampCount(data.stamp_count || 0);
@@ -36,11 +45,10 @@ function SettingsPage({ user }) {
     fetchStampCount();
     const interval = setInterval(fetchStampCount, 5000);
     return () => clearInterval(interval);
-  }, [user.sub]);
-
+  }, [user]);
 
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
+    await supabase.auth.signOut();
     router.push("/");
   };
 
@@ -48,6 +56,14 @@ function SettingsPage({ user }) {
     setAskDelete(false);
     await handleLogout();
   };
+
+  if (isLoading) {
+    return <p>Checking session...</p>;
+  }
+
+  if (!user) {
+    return null; // router will redirect
+  }
 
   return (
     <>
@@ -57,7 +73,7 @@ function SettingsPage({ user }) {
 
       <header className="register-header-block">
         <h1 className="settings-title">
-          Hi, <span>{user.username || "there"}</span>
+          Hi, <span>{user.email?.split("@")[0] || "there"}</span>
         </h1>
       </header>
 
@@ -109,39 +125,34 @@ function SettingsPage({ user }) {
         onCancel={() => setAskDelete(false)}
       />
 
-      {/* 👇 Always pass current stampCount to BottomNav */}
       <BottomNav stampCount={stampCount} />
     </>
   );
 }
 
-// ✅ Fetch stamp count server-side initially
-export async function getServerSideProps({ req }) {
-  const cookies = cookie.parse(req.headers.cookie || "");
-  const token = cookies.token || null;
+// ✅ SSR — don’t redirect if no cookie, just pass null
+export async function getServerSideProps(ctx) {
+  const supabase = createServerSupabaseClient(ctx);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!token) {
-    return { redirect: { destination: "/", permanent: false } };
+  if (!session) {
+    return { props: { initialUser: null, initialStampCount: 0 } };
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const { data } = await supabase
+    .from("profiles")
+    .select("stamp_count")
+    .eq("id", session.user.id)
+    .maybeSingle();
 
-    const { data } = await supabase
-      .from("users")
-      .select("stamp_count")
-      .eq("id", decoded.sub)
-      .single();
-
-    return {
-      props: {
-        user: decoded,
-        initialStampCount: data?.stamp_count ?? 0,
-      },
-    };
-  } catch (err) {
-    return { redirect: { destination: "/", permanent: false } };
-  }
+  return {
+    props: {
+      initialUser: session.user,
+      initialStampCount: data?.stamp_count ?? 0,
+    },
+  };
 }
 
 export default SettingsPage;

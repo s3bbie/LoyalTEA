@@ -1,8 +1,9 @@
-// pages/login.js
+// pages/index.js
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import Link from "next/link";
+import { supabase } from "../utils/authClient";
 
 export default function Login() {
   const router = useRouter();
@@ -10,41 +11,26 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("🚀 handleLogin triggered"); // debug
-
     setLoading(true);
 
     const username = e.target.username.value.trim();
     const pin = e.target.pin.value.trim();
-    console.log("Submitting credentials:", { username, pin }); // debug
+    const email = `${username}@loyaltea.com`; // ✅ adjust if different
 
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, pin }),
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pin,
+    });
 
-      console.log("Response status:", res.status); // debug
-
-      if (!res.ok) {
-        const { error } = await res.json();
-        console.error("❌ Login failed:", error); // debug
-        alert(error || "Login failed");
-        setLoading(false);
-        return;
-      }
-
-      const data = await res.json();
-      console.log("✅ Login success:", data); // debug
-
-      router.push("/home");
-    } catch (err) {
-      console.error("🔥 Unexpected error in handleLogin:", err);
-      alert("Something went wrong. Check console for details.");
-    } finally {
+    if (error) {
+      console.error("❌ Login failed:", error.message);
+      alert(error.message);
       setLoading(false);
+      return;
     }
+
+    console.log("✅ Login success:", data);
+    router.push("/home");
   };
 
   return (
@@ -68,14 +54,7 @@ export default function Login() {
             </div>
           </div>
 
-          <form
-            className="auth-form"
-            onSubmit={(e) => {
-              e.preventDefault(); // ✅ stops default page reload
-              handleLogin(e);
-            }}
-            action="javascript:void(0);" // ✅ safety net
-          >
+          <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">
               <label htmlFor="username">Username</label>
               <input type="text" id="username" name="username" required />
@@ -86,7 +65,6 @@ export default function Login() {
               <input type="password" id="pin" name="pin" required />
             </div>
 
-            {/* Button with loading state */}
             <button
               type="submit"
               disabled={loading}

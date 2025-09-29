@@ -1,62 +1,36 @@
-import { supabase } from "../../utils/supabaseClient";
+// pages/api/staff-stats.js
+import { supabaseAdmin } from "../../utils/supabaseAdmin";
 
 export default async function handler(req, res) {
   try {
-    // 1. Total customers
-    const { count: total_customers, error: custError } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
-    if (custError) throw custError;
+    // Example: aggregate stats
+    const { data: customers, error: custErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id");
 
-    // 2. Total stamps
-    const { count: total_stamps, error: stampError } = await supabase
+    if (custErr) throw custErr;
+
+    const { data: stamps, error: stampErr } = await supabaseAdmin
       .from("stamps")
-      .select("*", { count: "exact", head: true });
-    if (stampError) throw stampError;
+      .select("id");
 
-    // 3. Total redemptions
-    const { data: redeemData, count: total_redemptions, error: redeemError } =
-      await supabase.from("redeems").select("*", { count: "exact" });
-    if (redeemError) throw redeemError;
+    if (stampErr) throw stampErr;
 
-    // 4. Top redeemed drinks
-    const topRedeemed = Object.values(
-      redeemData.reduce((acc, row) => {
-        if (!row.reward_name) return acc;
-        acc[row.reward_name] = acc[row.reward_name] || {
-          reward_name: row.reward_name,
-          redeemed_count: 0,
-        };
-        acc[row.reward_name].redeemed_count++;
-        return acc;
-      }, {})
-    ).sort((a, b) => b.redeemed_count - a.redeemed_count);
+    // … do your aggregation logic
+    const stats = {
+      total_customers: customers.length,
+      total_stamps: stamps.length,
+      outstanding_rewards: 0, // replace with real calc
+      total_redemptions: 0,
+      total_revenue: 0,
+      revenue_breakdown: { daily: 0, weekly: 0, monthly: 0 },
+      top_redeemed_drinks: [],
+      top_customers_by_value: [],
+    };
 
-    // 5. Top customers by redemption count (no revenue column)
-    const topCustomers = Object.values(
-      redeemData.reduce((acc, row) => {
-        if (!row.username) return acc;
-        acc[row.username] = acc[row.username] || {
-          username: row.username,
-          total_value: 0,
-        };
-        acc[row.username].total_value += 1; // just counts redeems
-        return acc;
-      }, {})
-    ).sort((a, b) => b.total_value - a.total_value);
-
-    res.status(200).json({
-      total_customers,
-      total_stamps,
-      total_redemptions,
-      outstanding_rewards: 0, // You don’t have this table
-      total_revenue: topCustomers.reduce((s, c) => s + c.total_value, 0), // counts redeems
-      revenue_breakdown: { daily: 0, weekly: 0, monthly: 0 }, // placeholder until we use created_at
-      top_redeemed_drinks: topRedeemed,
-      top_customers_by_value: topCustomers,
-    });
+    return res.status(200).json(stats);
   } catch (err) {
-    console.error("staff-stats API error:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("❌ staff-stats API error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 }

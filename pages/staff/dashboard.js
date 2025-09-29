@@ -1,8 +1,16 @@
+// pages/staff/dashboard.js
 import { useEffect, useState } from "react";
 import StaffBottomNav from "../../components/StaffBottomNav";
 import { Gift, Ticket, Users, Star } from "lucide-react";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/router";
 
-export default function StaffDashboard() {
+function StaffDashboard({ initialUser }) {
+  const { session, isLoading } = useSessionContext();
+  const router = useRouter();
+  const user = session?.user || initialUser;
+
   const [stats, setStats] = useState({
     totalStamps: 0,
     totalRedemptions: 0,
@@ -14,29 +22,50 @@ export default function StaffDashboard() {
     topCustomersByValue: [],
   });
 
-useEffect(() => {
-  async function loadStats() {
-    try {
-      const res = await fetch("/api/staff-stats");
-      const data = await res.json();
-      setStats({
-        totalCustomers: data.total_customers,
-        totalStamps: data.total_stamps,
-        outstandingRewards: data.outstanding_rewards,
-        totalRedemptions: data.total_redemptions,
-        totalRevenue: data.total_revenue,
-        revenueBreakdown: data.revenue_breakdown,
-        topRedeemedDrinks: data.top_redeemed_drinks,
-        topCustomersByValue: data.top_customers_by_value,
-      });
-    } catch (err) {
-      console.error("Dashboard stats error:", err.message);
+  // 🚦 redirect only after hydration if no session
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/staff/login");
     }
+  }, [isLoading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/staff-stats");
+        const data = await res.json();
+
+        setStats({
+          totalCustomers: data.total_customers ?? 0,
+          totalStamps: data.total_stamps ?? 0,
+          outstandingRewards: data.outstanding_rewards ?? 0,
+          totalRedemptions: data.total_redemptions ?? 0,
+          totalRevenue: data.total_revenue ?? 0,
+          revenueBreakdown: data.revenue_breakdown || {
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+          },
+          topRedeemedDrinks: data.top_redeemed_drinks || [],
+          topCustomersByValue: data.top_customers_by_value || [],
+        });
+      } catch (err) {
+        console.error("Dashboard stats error:", err.message);
+      }
+    }
+
+    loadStats();
+  }, [user]);
+
+  if (isLoading) {
+    return <p>Checking staff session...</p>;
   }
-  loadStats();
-}, []);
 
-
+  if (!user) {
+    return null; // router will redirect
+  }
 
   const cards = [
     {
@@ -91,25 +120,23 @@ useEffect(() => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-bold mb-2">Top Redeemed Drinks</h2>
-{stats.topRedeemedDrinks?.length > 0 ? (
-
-  <ul className="text-sm text-gray-700">
-    {stats.topRedeemedDrinks.map((drink, idx) => (
-      <li key={idx} className="flex justify-between">
-        <span>{drink.reward_name}</span>
-        <span>{drink.redeemed_count}</span>
-      </li>
-    ))}
-  </ul>
-) : (
-  <p className="text-gray-600 text-sm">No data yet.</p>
-)}
-
+          {stats.topRedeemedDrinks?.length > 0 ? (
+            <ul className="text-sm text-gray-700">
+              {stats.topRedeemedDrinks.map((drink, idx) => (
+                <li key={idx} className="flex justify-between">
+                  <span>{drink.reward_name}</span>
+                  <span>{drink.redeemed_count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600 text-sm">No data yet.</p>
+          )}
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-bold mb-2">Top Customers by Value</h2>
-          {stats.topCustomersByValue.length > 0 ? (
+          {stats.topCustomersByValue?.length > 0 ? (
             <ul className="text-sm text-gray-700">
               {stats.topCustomersByValue.map((cust, idx) => (
                 <li key={idx} className="flex justify-between">
@@ -132,9 +159,9 @@ useEffect(() => {
             £{stats.totalRevenue}
           </p>
           <div className="flex justify-between text-sm text-gray-500 mt-4">
-            <span>Daily £{stats.revenueBreakdown.daily}</span>
-            <span>Weekly £{stats.revenueBreakdown.weekly}</span>
-            <span>Monthly £{stats.revenueBreakdown.monthly}</span>
+            <span>Daily £{stats.revenueBreakdown?.daily ?? 0}</span>
+            <span>Weekly £{stats.revenueBreakdown?.weekly ?? 0}</span>
+            <span>Monthly £{stats.revenueBreakdown?.monthly ?? 0}</span>
           </div>
         </div>
       </div>
@@ -143,3 +170,19 @@ useEffect(() => {
     </div>
   );
 }
+
+// ✅ SSR — don’t hard redirect if no session
+export async function getServerSideProps(ctx) {
+  const supabase = createServerSupabaseClient(ctx);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return {
+    props: {
+      initialUser: session ? session.user : null,
+    },
+  };
+}
+
+export default StaffDashboard;

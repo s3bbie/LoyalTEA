@@ -2,19 +2,17 @@
 import { useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import BottomNav from "@/components/BottomNav"; // ✅ use existing component
+import StaffBottomNav from "@/components/StaffBottomNav";
 import packageInfo from "../../package.json";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
-import { supabase } from "../../utils/supabaseClient";
+import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
 
 function StaffSettingsPage({ user }) {
   const [askDelete, setAskDelete] = useState(false);
   const router = useRouter();
 
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
+    await fetch("/api/logout", { method: "POST" }); // optional custom cleanup
     router.push("/staff/login");
   };
 
@@ -31,7 +29,7 @@ function StaffSettingsPage({ user }) {
 
       <header className="register-header-block">
         <h1 className="settings-title">
-          Hi, <span>{user.username || "team member"}</span>
+          Hi, <span>{user?.email || "team member"}</span>
         </h1>
       </header>
 
@@ -40,10 +38,16 @@ function StaffSettingsPage({ user }) {
       <div className="settings-container">
         <section>
           <h2 className="settings-section-title">Tools</h2>
-          <div className="setting-option" onClick={() => router.push("/staff/reports")}>
+          <div
+            className="setting-option"
+            onClick={() => router.push("/staff/reports")}
+          >
             Reports
           </div>
-          <div className="setting-option" onClick={() => router.push("/staff/scan")}>
+          <div
+            className="setting-option"
+            onClick={() => router.push("/staff/scan")}
+          >
             Scan QR
           </div>
         </section>
@@ -80,26 +84,28 @@ function StaffSettingsPage({ user }) {
         onCancel={() => setAskDelete(false)}
       />
 
-      {/* ✅ Just use BottomNav with staff navItems */}
-      <BottomNav />
+      <StaffBottomNav />
     </>
   );
 }
 
-export async function getServerSideProps({ req }) {
-  const cookies = cookie.parse(req.headers.cookie || "");
-  const token = cookies.token || null;
+// ✅ Supabase Auth session check (no custom JWT needed)
+export async function getServerSideProps(ctx) {
+  const supabase = createPagesServerClient(ctx); // or createServerSupabaseClient if not yet updated
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!token) {
-    return { redirect: { destination: "/staff/login", permanent: false } };
+  if (!session) {
+    return { props: { initialUser: null } }; // don't hard redirect
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
-  } catch (err) {
-    return { redirect: { destination: "/staff/login", permanent: false } };
-  }
+  return {
+    props: {
+      initialUser: session.user,
+    },
+  };
 }
+
 
 export default StaffSettingsPage;

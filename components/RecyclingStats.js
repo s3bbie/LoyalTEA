@@ -1,6 +1,6 @@
 // components/RecyclingStats.js
 import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
 
 export default function RecyclingStats() {
   const [office, setOffice] = useState(0);

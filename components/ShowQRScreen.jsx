@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
 import { v4 as uuidv4 } from "uuid";
 
 const ShowQRScreen = ({ userId, onBack }) => {

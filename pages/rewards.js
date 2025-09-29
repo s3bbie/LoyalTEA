@@ -1,28 +1,42 @@
 // pages/rewards.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { supabase } from "../utils/supabaseClient";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
+import { supabase } from "../utils/authClient";
 import BottomNav from "../components/BottomNav";
 import { QRCodeCanvas } from "qrcode.react";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
 
-function RewardsPage({ user }) {
+function RewardsPage({ initialUser }) {
+  const { session, isLoading } = useSessionContext();
+  const router = useRouter();
+
+  const user = session?.user || initialUser;
   const [stampCount, setStampCount] = useState(0);
-  const [dbUserId, setDbUserId] = useState(null); // ✅ Supabase row id
+  const [dbUserId, setDbUserId] = useState(null);
   const [rewards, setRewards] = useState([]);
   const [selectedReward, setSelectedReward] = useState(null);
   const [showQR, setShowQR] = useState(false);
 
+  // 🚦 redirect only if not loading and no user
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
+
   // fetch user's stamp count + rewards list
   useEffect(() => {
+    if (!user) return;
+
     const fetchData = async () => {
-      // ✅ fetch user row using username (same as home.js)
+      // ✅ fetch user row from profiles
       const { data: userData, error: userError } = await supabase
-        .from("users")
+        .from("profiles")
         .select("id, stamp_count")
-        .eq("username", user.username)
-        .single();
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (!userError && userData) {
         setDbUserId(userData.id);
@@ -44,12 +58,20 @@ function RewardsPage({ user }) {
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, [user.username]);
+  }, [user]);
 
   const handleUseReward = () => {
     if (!selectedReward) return;
     setShowQR(true);
   };
+
+  if (isLoading) {
+    return <p>Checking session...</p>;
+  }
+
+  if (!user) {
+    return null; // router will redirect
+  }
 
   return (
     <>
@@ -76,7 +98,7 @@ function RewardsPage({ user }) {
           <div className="max-w-2xl w-full mx-auto px-4 py-8 pb-24">
             <form className="space-y-4">
               {rewards
-                .filter((item) => stampCount >= 9) // ✅ unlock when 9 stamps
+                .filter((item) => stampCount >= 9)
                 .map((item) => (
                   <label
                     key={item.id}
@@ -86,7 +108,6 @@ function RewardsPage({ user }) {
                         : "hover:shadow-lg"
                     }`}
                   >
-                    {/* Circle image */}
                     {item.image_url && (
                       <img
                         src={item.image_url}
@@ -95,7 +116,6 @@ function RewardsPage({ user }) {
                       />
                     )}
 
-                    {/* Text */}
                     <div className="flex flex-col flex-grow">
                       <p className="text-base font-semibold text-gray-800">
                         {item.reward_name}
@@ -103,11 +123,8 @@ function RewardsPage({ user }) {
                       {item.category && (
                         <p className="text-xs text-gray-500">{item.category}</p>
                       )}
-
-                     
                     </div>
 
-                    {/* Radio input */}
                     <input
                       type="radio"
                       name="reward"
@@ -127,7 +144,6 @@ function RewardsPage({ user }) {
                 ))}
             </form>
 
-            {/* Button */}
             <button
               className="mt-6 w-full bg-pink-700 text-white font-semibold py-3 rounded-xl shadow-md disabled:opacity-50"
               type="button"
@@ -152,7 +168,7 @@ function RewardsPage({ user }) {
               <QRCodeCanvas
                 value={JSON.stringify({
                   mode: "reward",
-                  userId: dbUserId, // ✅ Supabase row id
+                  userId: dbUserId,
                   rewardId: selectedReward,
                 })}
                 size={240}
@@ -170,20 +186,18 @@ function RewardsPage({ user }) {
   );
 }
 
-export async function getServerSideProps({ req }) {
-  const cookies = cookie.parse(req.headers.cookie || "");
-  const token = cookies.token || null;
+// ✅ SSR — no redirect if no session, just pass null
+export async function getServerSideProps(ctx) {
+  const supabase = createServerSupabaseClient(ctx);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!token) {
-    return { redirect: { destination: "/", permanent: false } };
+  if (!session) {
+    return { props: { initialUser: null } };
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
-  } catch (err) {
-    return { redirect: { destination: "/", permanent: false } };
-  }
+  return { props: { initialUser: session.user } };
 }
 
 export default RewardsPage;

@@ -1,7 +1,7 @@
 // pages/redeem-history.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
 import BottomNav from "../components/BottomNav";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";

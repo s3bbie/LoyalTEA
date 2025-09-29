@@ -1,17 +1,4 @@
-// pages/api/logout.js
-import * as cookie from "cookie";
+import { supabase } from "@/utils/authClient";
 
-export default function handler(req, res) {
-  res.setHeader(
-    "Set-Cookie",
-    cookie.serialize("token", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      expires: new Date(0), // Expire immediately
-      path: "/",
-    })
-  );
-
-  res.status(200).json({ message: "Logged out" });
-}
+await supabase.auth.signOut();
+router.push("/staff/login");

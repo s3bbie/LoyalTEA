@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
 
 export default function DonationCard() {
   const [totalDonations, setTotalDonations] = useState(0);

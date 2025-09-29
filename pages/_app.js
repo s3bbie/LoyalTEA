@@ -10,9 +10,13 @@ import "@/styles/loading.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import BottomNav from "../components/BottomNav";
-import StaffBottomNav from "../components/StaffBottomNav"; // 👈 import staff nav
+import StaffBottomNav from "../components/StaffBottomNav";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next"; // 👈 import Speed Insights
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
+// ✅ Supabase imports
+import { supabase } from "../utils/authClient";
+import { SessionContextProvider } from "@supabase/auth-helpers-react";
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -26,7 +30,7 @@ export default function App({ Component, pageProps }) {
 
   // Simple loading splash with logo
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500); 
+    const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -39,11 +43,11 @@ export default function App({ Component, pageProps }) {
   }
 
   return (
-    <>
+    <SessionContextProvider supabaseClient={supabase}>
       <Component {...pageProps} />
       {showNav && (isStaffPage ? <StaffBottomNav /> : <BottomNav />)}
       <Analytics />
-      <SpeedInsights /> {/* 👈 added here */}
-    </>
+      <SpeedInsights />
+    </SessionContextProvider>
   );
 }

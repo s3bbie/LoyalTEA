@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import BottomNav from "../components/BottomNav";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/authClient";
 import { QRCodeCanvas } from "qrcode.react";
 import DonationCard from "../components/DonationCard";
 import RecyclingStats from "../components/RecyclingStats";
 import Co2Equivalents from "../components/Co2Equivalents";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import { useRouter } from "next/router";
 
 function IntroModal({ onClose }) {
   const handleClose = () => {
@@ -19,99 +20,89 @@ function IntroModal({ onClose }) {
   return (
     <div className="modal">
       <div className="modal-content">
-        <span className="close" onClick={handleClose}>
-          ×
-        </span>
+        <span className="close" onClick={handleClose}>×</span>
         <h2>Welcome to LoyalTEA ☕</h2>
         <p>
           Collect stamps every time you buy at the canteen. Once you reach 9,
           redeem a free drink 🎉
         </p>
-        <button className="btn-primary" onClick={handleClose}>
-          Got it!
-        </button>
+        <button className="btn-primary" onClick={handleClose}>Got it!</button>
       </div>
     </div>
   );
 }
 
-function Home({ user }) {
+function Home({ initialUser }) {
+  const { session, isLoading } = useSessionContext(); // ✅ includes loading state
+  const router = useRouter();
+
+  // prefer SSR session (initialUser), fallback to client session
+  const user = session?.user || initialUser;
+
   const [stampCount, setStampCount] = useState(0);
   const [stamps, setStamps] = useState([]);
-  const [dbUserId, setDbUserId] = useState(user.id); // ✅ set straight from JWT
+  const [dbUserId, setDbUserId] = useState(user?.id || null);
   const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [totalCo2, setTotalCo2] = useState(0);
 
+  // 🚦 Only redirect if *not loading* and no user
   useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
     if (!localStorage.getItem("introSeen")) {
       setShowIntro(true);
     }
 
     const fetchData = async () => {
-      // 🔍 Look up profile row
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("stamp_count, total_co2_saved")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profileError) {
-        console.error("⚠️ Error fetching profile row:", profileError.message);
-      }
-
       if (profileData) {
         setStampCount(profileData.stamp_count || 0);
         setTotalCo2(profileData.total_co2_saved ?? 0);
-      } else {
-        console.warn("ℹ️ No profile found for this user");
       }
 
-      // 📦 Fetch stamps
-      const { data: stampsData, error: stampsError } = await supabase
+      const { data: stampsData } = await supabase
         .from("stamps")
-        .select("*")
+        .select("id, user_id, reusable, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true });
 
-      if (!stampsError && stampsData) {
-        setStamps(stampsData);
+      if (stampsData) {
+        setStamps(stampsData.slice(-9).reverse());
       }
     };
 
     fetchData();
 
-    // ✅ Live updates
     const channel = supabase
       .channel("home-live")
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-          filter: `id=eq.${user.id}`,
-        },
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
         (payload) => {
-          console.log("📡 profile updated:", payload.new);
           setStampCount(payload.new.stamp_count);
           setTotalCo2(payload.new.total_co2_saved ?? 0);
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "stamps",
-          filter: `user_id=eq.${user.id}`,
-        },
+        { event: "INSERT", schema: "public", table: "stamps", filter: `user_id=eq.${user.id}` },
         (payload) => {
-          console.log("📡 New stamp added:", payload.new);
           setStamps((prev) =>
-            [...prev, payload.new].sort(
-              (a, b) => new Date(a.created_at) - new Date(b.created_at)
-            )
+            [...prev, payload.new]
+              .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+              .slice(-9)
           );
         }
       )
@@ -120,7 +111,16 @@ function Home({ user }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user.id]);
+  }, [user]);
+
+  // Show loading screen while session is being checked
+  if (isLoading) {
+    return <p>Checking session...</p>;
+  }
+
+  if (!user) {
+    return null; // router will redirect
+  }
 
   return (
     <>
@@ -133,7 +133,7 @@ function Home({ user }) {
           <div className="top-background-block"></div>
           <div className="home-header">
             <p className="welcome-text">
-              Hi,<span className="user-name"> {user.username}</span>
+              Hi,<span className="user-name"> {user.email?.split("@")[0]}</span>
             </p>
           </div>
 
@@ -145,25 +145,22 @@ function Home({ user }) {
                 <div className="beans-count">
                   <span>{stampCount}</span>/<span>9</span>
                 </div>
+
                 <div className="stamp-grid" id="stampGrid">
                   {[...Array(9)].map((_, i) => {
-                    if (i < stampCount) {
+                    const stamp = stamps[i];
+                    if (stamp) {
+                      const reusable =
+                        stamp.reusable === true || stamp.reusable === "true";
                       return (
-                        <div
-                          key={i}
-                          className={`stamp ${
-                            stamps[i]?.reusable ? "reusable" : "non-reusable"
-                          }`}
-                        />
+                        <div key={i} className={`stamp ${reusable ? "reusable" : "non-reusable"}`} />
                       );
-                    } else {
-                      return <div key={i} className="stamp" />;
                     }
+                    return <div key={i} className="stamp" />;
                   })}
                 </div>
               </div>
 
-              {/* ✅ Lifetime CO₂ saved */}
               <div className="co2-saved-text mt-3 text-center">
                 <Co2Equivalents co2Saved={totalCo2} />
               </div>
@@ -178,13 +175,9 @@ function Home({ user }) {
               </div>
             </button>
 
-            {/* ✅ Always render QR Code if we have user.id */}
             {dbUserId && (
               <div className="qr-content">
-                <button
-                  className="qr-close-inline"
-                  onClick={() => setShowQR(false)}
-                />
+                <button className="qr-close-inline" onClick={() => setShowQR(false)} />
                 <div className="qr-display">
                   <QRCodeCanvas
                     value={JSON.stringify({ mode: "stamp", userId: dbUserId })}
@@ -210,20 +203,18 @@ function Home({ user }) {
   );
 }
 
-export async function getServerSideProps({ req }) {
-  const cookies = cookie.parse(req.headers.cookie || "");
-  const token = cookies.token || null;
+// ✅ SSR — just pass initialUser, no redirect
+export async function getServerSideProps(ctx) {
+  const supabase = createServerSupabaseClient(ctx);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!token) {
-    return { redirect: { destination: "/", permanent: false } };
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
-  } catch (err) {
-    return { redirect: { destination: "/", permanent: false } };
-  }
+  return {
+    props: {
+      initialUser: session ? session.user : null,
+    },
+  };
 }
 
 export default Home;
