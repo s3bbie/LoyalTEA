@@ -38,7 +38,7 @@ function IntroModal({ onClose }) {
 function Home({ user }) {
   const [stampCount, setStampCount] = useState(0);
   const [stamps, setStamps] = useState([]);
-  const [dbUserId, setDbUserId] = useState(null);
+  const [dbUserId, setDbUserId] = useState(user.id); // ✅ set straight from JWT
   const [showQR, setShowQR] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [totalCo2, setTotalCo2] = useState(0);
@@ -49,77 +49,78 @@ function Home({ user }) {
     }
 
     const fetchData = async () => {
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, stamp_count, total_co2_saved")
-        .eq("username", user.username)
-        .single();
+      // 🔍 Look up profile row
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("stamp_count, total_co2_saved")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      if (!userError && userData) {
-        setDbUserId(userData.id);
-        setStampCount(userData.stamp_count || 0);
-        setTotalCo2(userData.total_co2_saved ?? 0);
-      } else {
-        console.error("⚠️ Error fetching user row:", userError?.message);
+      if (profileError) {
+        console.error("⚠️ Error fetching profile row:", profileError.message);
       }
 
-      if (userData?.id) {
-        const { data: stampsData, error: stampsError } = await supabase
-          .from("stamps")
-          .select("*")
-          .eq("user_id", userData.id)
-          .order("created_at", { ascending: true });
+      if (profileData) {
+        setStampCount(profileData.stamp_count || 0);
+        setTotalCo2(profileData.total_co2_saved ?? 0);
+      } else {
+        console.warn("ℹ️ No profile found for this user");
+      }
 
-        if (!stampsError && stampsData) {
-          setStamps(stampsData);
-        }
+      // 📦 Fetch stamps
+      const { data: stampsData, error: stampsError } = await supabase
+        .from("stamps")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (!stampsError && stampsData) {
+        setStamps(stampsData);
       }
     };
 
     fetchData();
 
-    // ✅ Realtime subscriptions for all user updates
-    if (user.username) {
-      const channel = supabase
-        .channel("home-live")
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "users",
-            filter: `username=eq.${user.username}`,
-          },
-          (payload) => {
-            console.log("📡 user row updated:", payload.new);
-            setStampCount(payload.new.stamp_count);
-            setTotalCo2(payload.new.total_co2_saved ?? 0);
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "stamps",
-            filter: `user_id=eq.${dbUserId}`,
-          },
-          (payload) => {
-            console.log("📡 New stamp added:", payload.new);
-            setStamps((prev) =>
-              [...prev, payload.new].sort(
-                (a, b) => new Date(a.created_at) - new Date(b.created_at)
-              )
-            );
-          }
-        )
-        .subscribe();
+    // ✅ Live updates
+    const channel = supabase
+      .channel("home-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("📡 profile updated:", payload.new);
+          setStampCount(payload.new.stamp_count);
+          setTotalCo2(payload.new.total_co2_saved ?? 0);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "stamps",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("📡 New stamp added:", payload.new);
+          setStamps((prev) =>
+            [...prev, payload.new].sort(
+              (a, b) => new Date(a.created_at) - new Date(b.created_at)
+            )
+          );
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user.username, dbUserId]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.id]);
 
   return (
     <>
@@ -177,6 +178,7 @@ function Home({ user }) {
               </div>
             </button>
 
+            {/* ✅ Always render QR Code if we have user.id */}
             {dbUserId && (
               <div className="qr-content">
                 <button

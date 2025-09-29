@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const email = `${username}@loyaltea.com`;
 
-    // 🔐 Authenticate with Supabase Auth
+    // 🔐 Sign in with Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: pin,
@@ -33,36 +33,49 @@ export default async function handler(req, res) {
 
     console.log("📧 Auth email from Supabase:", data.user.email);
 
-    // ✅ Fetch profile using supabaseAdmin (bypass RLS)
-    let profile = null;
-    const { data: profileData, error: roleError } = await supabaseAdmin
-      .from("profiles")
-      .select("role, email")
-      .eq("email", data.user.email.toLowerCase())
-      .maybeSingle();
+    // 🔑 Ensure profile exists (server-side, bypasses RLS)
+    await supabaseAdmin.from("profiles").upsert(
+      {
+        id: data.user.id,
+        email: data.user.email,
+        stamp_count: 0,
+        total_co2_saved: 0,
+      },
+      { onConflict: "id" }
+    );
 
-    if (roleError) {
-      console.error("⚠️ Profile query error:", roleError.message);
-    } else {
-      profile = profileData;
-    }
-
-    console.log("📦 Profile query result:", profile);
-
+    // 🔍 Get role from profiles
     let role = "user";
-    if (profile && profile.role) {
-      role = profile.role;
-    }
-    console.log("🔎 Final role resolved:", role);
+    try {
+      const { data: profile, error: roleError } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
 
-    // 🔑 Sign JWT
+      if (roleError) {
+        console.error("⚠️ Profile query error:", roleError.message);
+      } else if (profile?.role) {
+        role = profile.role;
+      }
+      console.log("📦 Profile role:", role);
+    } catch (err) {
+      console.error("🔥 Profile query failed:", err);
+    }
+
+    // 🔑 Sign JWT with id + username + role
     if (!process.env.JWT_SECRET) {
       console.error("❌ Missing JWT_SECRET in .env.local");
       return res.status(500).json({ error: "Server misconfigured" });
     }
 
     const token = jwt.sign(
-      { id: data.user.id, username },
+      {
+        id: data.user.id, // ✅ include Supabase Auth user id
+        username,
+        role,
+        email: data.user.email,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -79,13 +92,13 @@ export default async function handler(req, res) {
       })
     );
 
-    // 🕒 Update last login with supabaseAdmin too
+    // ✅ Update last login timestamp
     await supabaseAdmin
       .from("profiles")
       .update({ last_login_at: new Date().toISOString() })
-      .eq("email", data.user.email.toLowerCase());
+      .eq("id", data.user.id);
 
-    // ✅ Return
+    // ✅ Return to client
     return res.status(200).json({
       message: "Login successful",
       user: {
