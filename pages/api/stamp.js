@@ -14,34 +14,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing userId" });
     }
 
-    // Coerce reusable into a real boolean
+    // Coerce reusable into a boolean
     const isReusable =
       reusable === true ||
       reusable === "true" ||
       reusable === 1 ||
       reusable === "1";
 
-    // Try fetch user by id first, then fallback to username
+    // 🔍 Look up the profile
     let { data: userData, error: fetchError } = await supabaseAdmin
-      .from("users")
-      .select("id, stamp_count, total_stamps_collected, total_co2_saved, username")
+      .from("profiles")
+      .select("id, email, stamp_count, total_stamps_collected, total_co2_saved")
       .eq("id", userId)
       .maybeSingle();
 
-    if (!userData) {
-      const { data, error } = await supabaseAdmin
-        .from("users")
-        .select("id, stamp_count, total_stamps_collected, total_co2_saved, username")
-        .eq("username", userId)
-        .maybeSingle();
-
-      userData = data;
-      fetchError = error;
-    }
-
     if (fetchError || !userData) {
       console.error("User fetch error:", fetchError);
-      return res.status(400).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // ✅ Add a stamp
@@ -49,28 +38,20 @@ export default async function handler(req, res) {
       if ((userData.stamp_count || 0) >= 9) {
         return res
           .status(400)
-          .json({ error: `${userData.username} already has 9 stamps.` });
+          .json({ error: `${userData.email} already has 9 stamps.` });
       }
 
       const newCount = (userData.stamp_count || 0) + 1;
       const newTotalStamps = (userData.total_stamps_collected || 0) + 1;
 
-      // ✅ Add CO₂ savings (15g per reusable cup, 0g for disposable)
+      // 15g per reusable cup, 0 for disposable
       const co2Delta = isReusable ? 15 : 0;
-      const prevCo2 = userData.total_co2_saved ?? 0; // handle null properly
+      const prevCo2 = userData.total_co2_saved ?? 0;
       const newTotalCo2 = prevCo2 + co2Delta;
 
-      console.log("♻️ Calculating CO2:", {
-  reusable,
-  isReusable,
-  co2Delta,
-  prev: userData.total_co2_saved,
-  newTotalCo2,
-});
-
-      // Update user quick display count + totals
+      // Update profile
       const { error: updateError } = await supabaseAdmin
-        .from("users")
+        .from("profiles")
         .update({
           stamp_count: newCount,
           total_stamps_collected: newTotalStamps,
@@ -79,37 +60,32 @@ export default async function handler(req, res) {
         .eq("id", userData.id);
 
       if (updateError) {
-        console.error("❌ Failed to update user totals:", updateError);
-      } else {
-        console.log("✅ Updated user totals:", {
-          newCount,
-          newTotalStamps,
-          newTotalCo2,
-        });
+        console.error("❌ Failed to update profile:", updateError);
+        return res.status(500).json({ error: "Failed to update profile" });
       }
 
-      // Log into stamps table
+      // Log in stamps table
       await supabaseAdmin.from("stamps").insert([
         {
           user_id: userData.id,
-          reusable: isReusable, // ✅ always boolean
+          reusable: isReusable,
           created_at: new Date().toISOString(),
         },
       ]);
 
       return res.status(200).json({
         message: isReusable
-          ? `✅ Added 1 reusable stamp for ${userData.username} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`
-          : `✅ Added 1 disposable stamp for ${userData.username} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`,
+          ? `✅ Added 1 reusable stamp for ${userData.email} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`
+          : `✅ Added 1 disposable stamp for ${userData.email} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`,
       });
     }
 
-    // ✅ Redeem a reward
+    // ✅ Redeem reward
     if (mode === "reward") {
       if (userData.stamp_count < 9) {
         return res
           .status(400)
-          .json({ error: `${userData.username} does not have enough stamps.` });
+          .json({ error: `${userData.email} does not have enough stamps.` });
       }
 
       if (!rewardId) {
@@ -118,16 +94,16 @@ export default async function handler(req, res) {
 
       const newCount = userData.stamp_count - 9;
 
-      // Update stamp count (lifetime totals stay unchanged)
+      // Update profile (lifetime totals unchanged)
       await supabaseAdmin
-        .from("users")
+        .from("profiles")
         .update({ stamp_count: newCount })
         .eq("id", userData.id);
 
-      // ✅ Clear stamps table entries for this user after redeem
+      // Clear stamps table for this user
       await supabaseAdmin.from("stamps").delete().eq("user_id", userData.id);
 
-      // Log into redeems table
+      // Log redeem
       const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
         {
           user_id: userData.id,
@@ -144,8 +120,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         message: isReusable
-          ? `🎉 ${userData.username} redeemed a reward with a reusable cup!`
-          : `🎉 ${userData.username} redeemed a reward with a disposable cup.`,
+          ? `🎉 ${userData.email} redeemed a reward with a reusable cup!`
+          : `🎉 ${userData.email} redeemed a reward with a disposable cup.`,
       });
     }
 
