@@ -1,11 +1,11 @@
 {
   "name": "loyaltea",
-  "version": "1.4.41",
+  "version": "1.4.42",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && ( [ \"$BUILD_TARGET\" = \"mobile\" ] && next export -o out || true )",
-    "build:mobile": "next build && next export -o out && npx cap sync",
+    "build": "next build",
+    "build:mobile": "next build && npx cap sync",
     "start": "next start",
     "lint": "next lint",
     "tailwind": "tailwindcss -i ./styles/globals.css -o ./styles/tailwind-output.css --watch",
