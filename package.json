@@ -1,12 +1,13 @@
 {
   "name": "loyaltea",
-  "version": "1.4.36",
+  "version": "1.4.37",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "build": "npm run build:mobile",
     "build:web": "next build",
-    "start": "next start",
     "build:mobile": "next build && next export -o out && npx cap sync",
+    "start": "next start",
     "lint": "next lint",
     "tailwind": "tailwindcss -i ./styles/globals.css -o ./styles/tailwind-output.css --watch",
     "prepare": "husky install"
