@@ -33,10 +33,9 @@ function IntroModal({ onClose }) {
 }
 
 function Home({ initialUser }) {
-  const { session, isLoading } = useSessionContext(); // ✅ includes loading state
+  const { session, isLoading } = useSessionContext();
   const router = useRouter();
 
-  // prefer SSR session (initialUser), fallback to client session
   const user = session?.user || initialUser;
 
   const [stampCount, setStampCount] = useState(0);
@@ -108,18 +107,35 @@ function Home({ initialUser }) {
       )
       .subscribe();
 
+    // ✅ Listen for optimistic events from staff scan
+    const handleOptimisticStamp = (e) => {
+      if (e.detail.userId !== user.id) return;
+
+      const { stamp, stampCount, totalCo2 } = e.detail;
+
+      setStamps((prev) =>
+        [...prev, stamp]
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+          .slice(-9)
+      );
+      setStampCount(stampCount);
+      setTotalCo2(totalCo2 ?? 0);
+    };
+
+    window.addEventListener("stamp-added", handleOptimisticStamp);
+
     return () => {
+      window.removeEventListener("stamp-added", handleOptimisticStamp);
       supabase.removeChannel(channel);
     };
   }, [user]);
 
-  // Show loading screen while session is being checked
   if (isLoading) {
     return <p>Checking session...</p>;
   }
 
   if (!user) {
-    return null; // router will redirect
+    return null;
   }
 
   return (
@@ -203,7 +219,7 @@ function Home({ initialUser }) {
   );
 }
 
-// ✅ SSR — just pass initialUser, no redirect
+// ✅ SSR
 export async function getServerSideProps(ctx) {
   const supabase = createServerSupabaseClient(ctx);
   const {

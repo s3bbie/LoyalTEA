@@ -2,6 +2,7 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
+import Link from "next/link"; // ✅ import Link
 import { supabase } from "../../utils/authClient";
 
 export default function StaffLogin() {
@@ -38,9 +39,15 @@ export default function StaffLogin() {
         <title>Staff Login – LoyalTEA</title>
       </Head>
 
+      {/* ✅ Top-right return button */}
+      <div className="staff-login-btn">
+        <Link href="/" className="btn-primary">
+          Return to Main Login
+        </Link>
+      </div>
+
       <div className="auth-container login">
         <div className="form-wrapper">
-          {/* ✅ Logo restored */}
           <div className="flex justify-center mb-6">
             <div className="logo">
               <img src="/images/logo.png" alt="LoyalTEA Logo" />

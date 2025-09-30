@@ -64,19 +64,31 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Failed to update profile" });
       }
 
-      // Log in stamps table
-      await supabaseAdmin.from("stamps").insert([
-        {
-          user_id: userData.id,
-          reusable: isReusable,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      // Log in stamps table and return inserted row
+      const { data: insertedStamps, error: insertError } = await supabaseAdmin
+        .from("stamps")
+        .insert([
+          {
+            user_id: userData.id,
+            reusable: isReusable,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select(); // 👈 return the inserted row
+
+      if (insertError) {
+        console.error("Stamp insert error:", insertError);
+        return res.status(500).json({ error: "Failed to insert stamp" });
+      }
 
       return res.status(200).json({
         message: isReusable
           ? `✅ Added 1 reusable stamp for ${userData.email} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`
           : `✅ Added 1 disposable stamp for ${userData.email} (${newCount}/9, total ${newTotalStamps}, CO₂ saved: ${newTotalCo2}g)`,
+        stamp_count: newCount,
+        total_stamps_collected: newTotalStamps,
+        total_co2_saved: newTotalCo2,
+        new_stamp: insertedStamps?.[0] || null,
       });
     }
 
@@ -104,14 +116,17 @@ export default async function handler(req, res) {
       await supabaseAdmin.from("stamps").delete().eq("user_id", userData.id);
 
       // Log redeem
-      const { error: redeemError } = await supabaseAdmin.from("redeems").insert([
-        {
-          user_id: userData.id,
-          reward_id: rewardId,
-          reusable: isReusable,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      const { error: redeemError, data: redeemData } = await supabaseAdmin
+        .from("redeems")
+        .insert([
+          {
+            user_id: userData.id,
+            reward_id: rewardId,
+            reusable: isReusable,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select();
 
       if (redeemError) {
         console.error("Redeem insert error:", redeemError);
@@ -122,6 +137,9 @@ export default async function handler(req, res) {
         message: isReusable
           ? `🎉 ${userData.email} redeemed a reward with a reusable cup!`
           : `🎉 ${userData.email} redeemed a reward with a disposable cup.`,
+        stamp_count: newCount,
+        new_stamp: null, // 👈 no stamp row on redeem
+        redeem: redeemData?.[0] || null,
       });
     }
 

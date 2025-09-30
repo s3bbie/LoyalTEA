@@ -21,7 +21,7 @@ export default function StaffScan() {
         try {
           const parsed = JSON.parse(result.data);
           console.log("Scanned QR payload:", parsed);
-          
+
           const response = await fetch("/api/stamp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -35,6 +35,15 @@ export default function StaffScan() {
 
           if (response.ok) {
             setMessage(apiResult.message);
+
+            // ✅ Optimistic UI update: dispatch custom event to Home
+            const event = new CustomEvent("stamp-added", {
+              detail: {
+                userId: parsed.userId,
+                reusable: activeMode === "reusable",
+              },
+            });
+            window.dispatchEvent(event);
           } else {
             setMessage(`❌ ${apiResult.error}`);
           }
