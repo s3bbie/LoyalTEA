@@ -2,7 +2,7 @@
 import Head from "next/head";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import { QRCode } from "qrcode.react";
+import QRCode from "qrcode.react";
 
 
 export default function StaffQR({ staffToken }) {

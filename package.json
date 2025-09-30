@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:mobile",
+    "build": "next build",
     "build:web": "next build",
     "build:mobile": "next build && next export -o out && npx cap sync",
     "start": "next start",
