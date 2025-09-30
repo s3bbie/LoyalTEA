@@ -1,3 +1,4 @@
+// pages/staff/scan.js
 import { useEffect, useRef, useState } from "react";
 import StaffBottomNav from "../../components/StaffBottomNav";
 import QrScanner from "qr-scanner";
@@ -36,11 +37,14 @@ export default function StaffScan() {
           if (response.ok) {
             setMessage(apiResult.message);
 
-            // ✅ Optimistic UI update: dispatch custom event to Home
+            // ✅ Optimistic UI update: dispatch with full details
             const event = new CustomEvent("stamp-added", {
               detail: {
                 userId: parsed.userId,
                 reusable: activeMode === "reusable",
+                stamp: apiResult.new_stamp,              // new stamp row
+                stampCount: apiResult.stamp_count,       // updated count
+                totalCo2: apiResult.total_co2_saved,     // updated CO₂
               },
             });
             window.dispatchEvent(event);
