@@ -1,6 +1,6 @@
 {
   "name": "loyaltea",
-  "version": "1.4.32",
+  "version": "1.4.33",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,6 +11,8 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
     "@heroicons/react": "^2.2.0",
     "@next/bundle-analyzer": "^15.5.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",

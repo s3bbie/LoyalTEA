@@ -1,11 +1,9 @@
 const isProd = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 
-// 🔎 Import the analyzer
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
-// ⚡ Existing PWA setup
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -16,6 +14,8 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
+  output: "export",   // ✅ add this for static export
+  distDir: "out",     // ✅ make sure it exports into /out for Capacitor
   async headers() {
     return [
       {
@@ -31,5 +31,4 @@ const nextConfig = {
   },
 };
 
-// ✅ Combine PWA + Analyzer
 module.exports = withBundleAnalyzer(withPWA(nextConfig));
