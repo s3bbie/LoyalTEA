@@ -1,0 +1,106 @@
+.splash-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertical center */
+  align-items: center;     /* horizontal center */
+  min-height: 100vh;
+  text-align: center;
+  padding: 20px;
+}
+
+.splash-content {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  color: #fff;
+}
+
+.splash-logo img {
+  width: 100px;
+  margin: 0 auto 20px;
+  animation: none !important; /* remove pulse */
+}
+
+.splash-logo {
+    animation: none !important; /* remove pulse */
+}
+
+.splash-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.splash-subtitle {
+  font-size: 1rem;
+  margin-bottom: 25px;
+  opacity: 0.9;
+}
+
+
+.splash-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #fff;
+  color: #ec008c;
+}
+
+.btn-primary:hover {
+  background: #f0f0f0;
+}
+
+.btn-primary-staff
+ {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.btn-primary-staff {
+  background: #ec008c;
+  color: #fff;
+}
+
+.btn-primary-staff:hover {
+  background: #8d0055;
+}
+.btn-secondary {
+  background: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.staff-login-btn {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.splash-illustration {
+  padding-bottom: 2rem;
+}

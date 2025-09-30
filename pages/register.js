@@ -3,6 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/utils/authClient"; // ✅ import client
 
 export default function Register() {
   const router = useRouter();
@@ -29,21 +30,34 @@ export default function Register() {
       return;
     }
 
-    // Call our API instead of direct supabase insert
+    // Call API to create account
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, pin }),
     });
 
-    setLoading(false);
-
-    if (res.ok) {
-      // ✅ Cookie is set by API, now redirect
-      router.push("/home");
-    } else {
+    if (!res.ok) {
       const { error } = await res.json();
       alert(error || "Registration failed");
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Auto-login after successful registration
+    const email = `${username}@loyaltea.com`; // must match what API creates
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: pin,
+    });
+
+    setLoading(false);
+
+    if (loginError) {
+      alert("Account created but login failed: " + loginError.message);
+      router.push("/login"); // send back to login
+    } else {
+      router.push("/home"); // success
     }
   };
 
@@ -90,7 +104,7 @@ export default function Register() {
             </button>
 
             <p className="signup-prompt">
-              Already a member? <Link href="/">Sign in</Link>
+              Already a member? <Link href="/login">Sign in</Link>
             </p>
           </form>
         </div>

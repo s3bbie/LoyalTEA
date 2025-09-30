@@ -6,6 +6,7 @@ import "@/styles/rewards.css";
 import "@/styles/settings.css";
 import "@/styles/auth.css";
 import "@/styles/loading.css";
+import "@/styles/splash.css";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";

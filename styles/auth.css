@@ -37,3 +37,21 @@
   font-weight: 600;
   color: #ffffff; /* white, same as original labels */
 }
+
+.remember-me-box label {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* space between checkbox and text */
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.remember-me-box input[type="checkbox"] {
+  accent-color: #fc36ac; /* brand pink */
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+

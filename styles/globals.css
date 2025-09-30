@@ -8,6 +8,7 @@ body, html {
   padding: 0;
   font-family: 'Poppins', sans-serif;
   background-color: #a91c71;
+  background: linear-gradient(160deg, #ec008c, #720c49);
 }
 
 
@@ -310,9 +311,7 @@ body, html {
 }
 
 .staff-login-btn {
-  position: fixed;   /* pins it to the screen */
-  top: 20px;         /* distance from top */
-  right: 20px;       /* distance from right */
+
   z-index: 1000;     /* keeps it above everything else */
 }
 

@@ -1,87 +1,45 @@
-// pages/index.js
 import Head from "next/head";
-import { useRouter } from "next/router";
-import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../utils/authClient";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { supabase } from "@/utils/authClient";
 
-export default function Login() {
+export default function Splash() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const username = e.target.username.value.trim();
-    const pin = e.target.pin.value.trim();
-    const email = `${username}@loyaltea.com`; // ✅ adjust if different
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: pin,
+  // ✅ If already logged in, skip splash
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace("/home");
+      }
     });
-
-    if (error) {
-      console.error("❌ Login failed:", error.message);
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    console.log("✅ Login success:", data);
-    router.push("/home");
-  };
+  }, [router]);
 
   return (
     <>
-      <Head>
-        <title>Login – LoyalTEA</title>
-      </Head>
+      <Head><title>Welcome – LoyalTEA</title></Head>
 
-      {/* Top-right staff login button */}
-      <div className="staff-login-btn">
-        <Link href="/staff/login" className="btn-primary">
-          Staff Only
-        </Link>
-      </div>
-
-      <div className="auth-container login">
-        <div className="form-wrapper">
-          <div className="flex justify-center">
-            <div className="logo">
-              <img src="/images/logo.png" alt="LoyalTEA Logo" />
-            </div>
+      <div className="splash-container">
+        <div className="splash-content">
+          <div className="logo">
+            <img src="/images/logo.png" alt="LoyalTEA Logo" />
           </div>
 
-          <form className="auth-form" onSubmit={handleLogin}>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input type="text" id="username" name="username" required />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="pin">PIN</label>
-              <input type="password" id="pin" name="pin" required />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`btn-primary flex justify-center items-center ${
-                loading ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-            >
-              {loading && (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-              )}
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
-
-          <p className="signup-prompt">
-            Not a member? <Link href="/register">Sign up</Link>
+          <h1 className="splash-title">Welcome =)</h1>
+          <p className="splash-subtitle">
+            Collect stamps. Earn rewards. Drink sustainably.
           </p>
+
+           {/* Illustration placeholder – replace with SVG/PNG */}
+          <div className="splash-illustration">
+            <img src="/images/coffee_team.svg" alt="Illustration" />
+          </div>
+
+          <div className="splash-buttons">
+            <Link href="/register" className="btn-primary">Create Account</Link>
+            <Link href="/login" className="btn-secondary">Log In</Link>
+          </div>
         </div>
       </div>
     </>

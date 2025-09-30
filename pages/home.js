@@ -48,7 +48,7 @@ function Home({ initialUser }) {
   // 🚦 Only redirect if *not loading* and no user
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace("/login");
+      router.replace("/");
     }
   }, [isLoading, user, router]);
 

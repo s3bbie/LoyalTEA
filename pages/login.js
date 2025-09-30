@@ -1,11 +1,10 @@
-// pages/staff/login.js
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../utils/authClient";
+import { supabase } from "../utils/authClient";
 
-export default function StaffLogin() {
+export default function Login() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -15,58 +14,42 @@ export default function StaffLogin() {
 
     const username = e.target.username.value.trim();
     const pin = e.target.pin.value.trim();
-    const email = `${username}@loyaltea.com`; // adjust if staff emails differ
+    const rememberMe = e.target.rememberMe.checked;
 
-    // Try login
+    const email = `${username}@loyaltea.com`; // must match registration
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password: pin,
     });
 
-    if (error || !data.user) {
-      console.error("❌ Staff login failed:", error?.message);
-      alert("Invalid username or PIN");
+    if (error) {
+      console.error("❌ Login failed:", error.message);
+      alert(error.message);
       setLoading(false);
       return;
     }
 
-    // 🔎 Fetch profile to check role
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .maybeSingle();
+    // ✅ Control session persistence
+    await supabase.auth.setSession(data.session, {
+      persistSession: rememberMe, // true if remember me checked
+    });
 
-    if (profileError || !profile) {
-      console.error("❌ Profile fetch error:", profileError);
-      alert("Could not load profile");
-      setLoading(false);
-      return;
-    }
-
-    if (profile.role !== "staff" && profile.role !== "admin") {
-      alert("❌ You do not have staff access");
-      setLoading(false);
-      return;
-    }
-
-    console.log("✅ Staff login success:", data);
-    router.push("/staff/dashboard");
+    console.log("✅ Login success:", data);
+    router.push("/home");
   };
 
   return (
     <>
       <Head>
-        <title>Staff Login – LoyalTEA</title>
+        <title>Login – LoyalTEA</title>
       </Head>
 
-      {/* Top-right return button */}
-      
+
 
       <div className="auth-container login">
         <div className="form-wrapper">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center">
             <div className="logo">
               <img src="/images/logo.png" alt="LoyalTEA Logo" />
             </div>
@@ -83,6 +66,15 @@ export default function StaffLogin() {
               <input type="password" id="pin" name="pin" required />
             </div>
 
+            {/* ✅ Inline Remember me row */}
+            <div className="form-group remember-me-box">
+  <label htmlFor="rememberMe">
+    <input type="checkbox" id="rememberMe" name="rememberMe" />
+    <span>Remember me</span>
+  </label>
+</div>
+
+
             <button
               type="submit"
               disabled={loading}
@@ -90,13 +82,21 @@ export default function StaffLogin() {
                 loading ? "opacity-60 cursor-not-allowed" : ""
               }`}
             >
+              {loading && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+              )}
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <div className="staff-login-btn">
-        <Link href="/login" className="btn-primary">
-          Return to Main Login
+          <p className="signup-prompt">
+            Not a member? <Link href="/register">Sign up</Link>
+          </p>
+
+                {/* Top-right staff login button */}
+      <div className="staff-login-btn">
+        <Link href="/staff/login" className="btn-primary-staff">
+          Login as Operator
         </Link>
       </div>
         </div>
