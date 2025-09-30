@@ -1,25 +1,35 @@
 // pages/redeem-history.js
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { supabase } from "../utils/authClient";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 import BottomNav from "../components/BottomNav";
-import jwt from "jsonwebtoken";
-import * as cookie from "cookie";
 
-export default function RedeemHistory({ user }) {
+export default function RedeemHistory() {
+  const { session, isLoading } = useSessionContext();
+  const router = useRouter();
+
   const [redeems, setRedeems] = useState([]);
   const [stamps, setStamps] = useState([]);
   const [tab, setTab] = useState("all");
+  const user = session?.user || null;
 
   useEffect(() => {
-    if (!user?.sub) return;
+    if (!isLoading && !user) {
+      router.replace("/");
+    }
+  }, [isLoading, user, router]);
 
+  useEffect(() => {
     const fetchData = async () => {
+      if (!user) return;
+
       // 1. Get redeems
       const { data: redeemsData, error: redeemErr } = await supabase
         .from("redeems")
         .select("id, created_at, reward_id")
-        .eq("user_id", user.sub)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (redeemErr) {
@@ -53,7 +63,7 @@ export default function RedeemHistory({ user }) {
       const { data: stampsData, error: stampsErr } = await supabase
         .from("stamps")
         .select("reusable")
-        .eq("user_id", user.sub);
+        .eq("user_id", user.id);
 
       if (stampsErr) console.error("Stamps error:", stampsErr);
 
@@ -61,14 +71,13 @@ export default function RedeemHistory({ user }) {
     };
 
     fetchData();
-  }, [user?.sub]);
+  }, [user]);
 
   const reusableCount = stamps.filter((s) => s.reusable).length;
   const nonReusableCount = stamps.filter((s) => !s.reusable).length;
 
-  if (!user) {
-    return <p className="p-4">Loading...</p>;
-  }
+  if (isLoading) return <p>Loading session...</p>;
+  if (!user) return null;
 
   return (
     <>
@@ -142,20 +151,4 @@ export default function RedeemHistory({ user }) {
       <BottomNav />
     </>
   );
-}
-
-export async function getServerSideProps({ req }) {
-  const cookies = cookie.parse(req.headers.cookie || "");
-  const token = cookies.token || null;
-
-  if (!token) {
-    return { redirect: { destination: "/", permanent: false } };
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { user: decoded } };
-  } catch {
-    return { redirect: { destination: "/", permanent: false } };
-  }
 }

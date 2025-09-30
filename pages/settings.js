@@ -6,16 +6,15 @@ import BottomNav from "../components/BottomNav";
 import packageInfo from "../package.json";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { supabase } from "../utils/authClient";
-import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { useSessionContext } from "@supabase/auth-helpers-react";
 
-function SettingsPage({ initialUser, initialStampCount }) {
+export default function SettingsPage() {
   const { session, isLoading } = useSessionContext();
   const router = useRouter();
 
-  const user = session?.user || initialUser;
+  const user = session?.user || null;
   const [askDelete, setAskDelete] = useState(false);
-  const [stampCount, setStampCount] = useState(initialStampCount || 0);
+  const [stampCount, setStampCount] = useState(0);
 
   // 🚦 redirect only if not loading and no user
   useEffect(() => {
@@ -129,30 +128,3 @@ function SettingsPage({ initialUser, initialStampCount }) {
     </>
   );
 }
-
-// ✅ SSR — don’t redirect if no cookie, just pass null
-export async function getServerSideProps(ctx) {
-  const supabase = createServerSupabaseClient(ctx);
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return { props: { initialUser: null, initialStampCount: 0 } };
-  }
-
-  const { data } = await supabase
-    .from("profiles")
-    .select("stamp_count")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  return {
-    props: {
-      initialUser: session.user,
-      initialStampCount: data?.stamp_count ?? 0,
-    },
-  };
-}
-
-export default SettingsPage;
