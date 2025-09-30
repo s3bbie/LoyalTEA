@@ -3,9 +3,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.pixelseb.loyaltea',
   appName: 'LoyalTEA',
-  webDir: '.next', // ✅ matches your Next.js static export
+  webDir: '.next',
+
+  // ✅ Point the native app to your deployed Vercel instance
   server: {
-    androidScheme: 'https' // ✅ ensures secure requests on Android
+    url: "https://loyaltea.vercel.app", // 🔑 replace with your actual Vercel domain
+    cleartext: false
   }
 };
 
