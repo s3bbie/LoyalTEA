@@ -111,13 +111,22 @@ function Home({ initialUser }) {
     const handleOptimisticStamp = (e) => {
       if (e.detail.userId !== user.id) return;
 
-      const { stamp, stampCount, totalCo2 } = e.detail;
+      const { stamp, stampCount, totalCo2, reusable } = e.detail;
+
+      // create a placeholder if no stamp row came through
+      const optimisticStamp = stamp || {
+        id: `optimistic-${Date.now()}`,
+        user_id: user.id,
+        reusable,
+        created_at: new Date().toISOString(),
+      };
 
       setStamps((prev) =>
-        [...prev, stamp]
+        [...prev, optimisticStamp]
           .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
           .slice(-9)
       );
+
       setStampCount(stampCount);
       setTotalCo2(totalCo2 ?? 0);
     };
@@ -169,7 +178,7 @@ function Home({ initialUser }) {
                       const reusable =
                         stamp.reusable === true || stamp.reusable === "true";
                       return (
-                        <div key={i} className={`stamp ${reusable ? "reusable" : "non-reusable"}`} />
+                        <div key={stamp.id || i} className={`stamp ${reusable ? "reusable" : "non-reusable"}`} />
                       );
                     }
                     return <div key={i} className="stamp" />;
