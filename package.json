@@ -1,11 +1,10 @@
 {
   "name": "loyaltea",
-  "version": "1.4.40",
+  "version": "1.4.41",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:web": "next build",
+    "build": "next build && ( [ \"$BUILD_TARGET\" = \"mobile\" ] && next export -o out || true )",
     "build:mobile": "next build && next export -o out && npx cap sync",
     "start": "next start",
     "lint": "next lint",
