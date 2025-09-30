@@ -2,8 +2,7 @@
 import Head from "next/head";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import QRCode from "qrcode.react";
-
+import { QRCodeCanvas } from "qrcode.react";
 
 export default function StaffQR({ staffToken }) {
   return (
@@ -13,7 +12,7 @@ export default function StaffQR({ staffToken }) {
         <h1>Staff QR Code</h1>
         <p>Show this QR to customers for stamps or rewards</p>
         <div className="qr-wrapper">
-          <QRCode value={JSON.stringify({ staffToken })} size={240} />
+        <QRCodeCanvas value="your-data-here" size={256} />
         </div>
       </div>
     </>
