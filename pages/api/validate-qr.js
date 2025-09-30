@@ -1,6 +1,6 @@
 // pages/api/validate-qr.js
 import jwt from "jsonwebtoken";
-import { supabase } from "@/utils/supabaseClient";
+import { supabase } from "@/utils/authClient";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
