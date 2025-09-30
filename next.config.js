@@ -26,9 +26,7 @@ const nextConfig = {
         distDir: "out",
       }
     : {
-        experimental: {
-          runtime: "nodejs", // ✅ use Node runtime for Supabase on Vercel
-        },
+       
       }),
 
   async headers() {

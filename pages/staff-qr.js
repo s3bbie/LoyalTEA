@@ -47,3 +47,7 @@ export async function getServerSideProps({ req }) {
     return { redirect: { destination: "/", permanent: false } };
   }
 }
+
+export const config = {
+  runtime: "nodejs",
+};

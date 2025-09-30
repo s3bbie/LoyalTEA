@@ -51,3 +51,7 @@ export default function App({ Component, pageProps }) {
     </SessionContextProvider>
   );
 }
+
+export const config = {
+  runtime: "nodejs",
+};
