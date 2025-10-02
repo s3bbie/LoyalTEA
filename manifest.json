@@ -3,18 +3,20 @@
   "short_name": "LoyalTEA",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000", 
-  "theme_color": "#EC008C",       
+  "background_color": "#000000",
+  "theme_color": "#EC008C",
   "icons": [
     {
-      "src": "/images/LoyalTEA-Pink.svg",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/images/LoyalTEA-Pink.svg",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
