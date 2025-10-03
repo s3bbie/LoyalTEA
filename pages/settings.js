@@ -5,11 +5,10 @@ import { useRouter } from "next/router";
 import BottomNav from "../components/BottomNav";
 import packageInfo from "../package.json";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { supabase } from "../utils/authClient";
 import { useSessionContext } from "@supabase/auth-helpers-react";
 
 export default function SettingsPage() {
-  const { session, isLoading } = useSessionContext();
+  const { session, isLoading, supabaseClient } = useSessionContext();
   const router = useRouter();
 
   const user = session?.user || null;
@@ -28,11 +27,11 @@ export default function SettingsPage() {
     if (!user) return;
 
     const fetchStampCount = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("stamp_count")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data, error } = await supabaseClient
+  .from("profiles")
+  .select("stamp_count")
+  .eq("id", user.id)
+  .maybeSingle();
 
       if (!error && data) {
         setStampCount(data.stamp_count || 0);
@@ -46,10 +45,18 @@ export default function SettingsPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-  };
+const handleLogout = async () => {
+  try {
+    await supabaseClient.auth.signOut();
+  } catch (err) {
+    if (err.message.includes("403")) {
+      console.log("Ignoring Supabase global logout error");
+    } else {
+      console.error("Logout error:", err);
+    }
+  }
+  router.push("/");
+};
 
   const doDeleteAccount = async () => {
     setAskDelete(false);

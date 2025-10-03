@@ -2,19 +2,19 @@ import Head from "next/head";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "@/utils/authClient";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 
 export default function Splash() {
+  const { session, isLoading } = useSessionContext();
   const router = useRouter();
 
   // ✅ If already logged in, skip splash
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.replace("/home");
-      }
-    });
-  }, [router]);
+    if (isLoading) return; // wait until auth state is loaded
+    if (session) {
+      router.replace("/home");
+    }
+  }, [session, isLoading, router]);
 
   return (
     <>
@@ -31,7 +31,6 @@ export default function Splash() {
             Collect stamps. Earn rewards. Drink sustainably.
           </p>
 
-           {/* Illustration placeholder – replace with SVG/PNG */}
           <div className="splash-illustration">
             <img src="/images/coffee_team.svg" alt="Illustration" />
           </div>
