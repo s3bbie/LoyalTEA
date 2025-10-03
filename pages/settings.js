@@ -47,16 +47,25 @@ export default function SettingsPage() {
 
 const handleLogout = async () => {
   try {
+    // Try to sign out
     await supabaseClient.auth.signOut();
   } catch (err) {
-    if (err.message.includes("403")) {
-      console.log("Ignoring Supabase global logout error");
+    // Ignore the harmless 403 global logout error
+    if (err?.message?.includes("403")) {
+      console.log("Supabase global logout error ignored (anon key cannot revoke all tokens).");
     } else {
       console.error("Logout error:", err);
     }
   }
+
+  // ✅ Clear any cached Supabase tokens just in case
+  localStorage.removeItem("supabase.auth.token");
+  localStorage.removeItem("supabase.auth.token#");
+
+  // 🚦 Send user back to splash
   router.push("/");
 };
+
 
   const doDeleteAccount = async () => {
     setAskDelete(false);
