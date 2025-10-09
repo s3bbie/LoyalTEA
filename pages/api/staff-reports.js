@@ -83,7 +83,7 @@ const mostRedeemed =
   redeems.length > 0
     ? Object.entries(
         redeems.reduce((acc, r) => {
-          acc[r.reward] = (acc[r.reward] || 0) + 1; // ✅ fixed field name
+          acc[r.reward] = (acc[r.reward] || 0) + 1;
           return acc;
         }, {})
       ).sort((a, b) => b[1] - a[1])[0][0]
