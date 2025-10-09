@@ -7,8 +7,8 @@ body, html {
   margin: 0;
   padding: 0;
   font-family: 'Poppins', sans-serif;
-  background-color: #a91c71;
-  background: linear-gradient(160deg, #ec008c, #720c49);
+  background-color: #9E1C60;
+
 }
 
 
@@ -18,7 +18,7 @@ body, html {
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  background: #91204D;
+  background: #ba2880;
   color: #fff;
   padding: 18px 30px;
   border-radius: 18px;
@@ -332,3 +332,6 @@ body, html {
   text-align: center;
 }
 
+.bg-brandPink {
+  background-color:#9E1C60;
+}
