@@ -11,16 +11,22 @@ function StaffDashboard({ initialUser }) {
   const router = useRouter();
   const user = session?.user || initialUser;
 
-  const [stats, setStats] = useState({
-    totalStamps: 0,
-    totalRedemptions: 0,
-    totalCustomers: 0,
-    outstandingRewards: 0,
-    totalRevenue: 0,
-    revenueBreakdown: { daily: 0, weekly: 0, monthly: 0 },
-    topRedeemedDrinks: [],
-    topCustomersByValue: [],
-  });
+const [stats, setStats] = useState({
+  totalStamps: 0,
+  totalRedemptions: 0,
+  totalCustomers: 0,
+  outstandingRewards: 0,
+  totalRevenue: 0,
+  revenueBreakdown: { daily: 0, weekly: 0, monthly: 0 },
+  topRedeemedDrinks: [],
+  topCustomersByValue: [],
+  sustainability_breakdown: {
+    reusable_count: 0,
+    non_reusable_count: 0,
+    reusable_percentage: 0,
+  },
+});
+
 
   // 🚦 redirect only after hydration if no session
   useEffect(() => {
@@ -29,35 +35,41 @@ function StaffDashboard({ initialUser }) {
     }
   }, [isLoading, user, router]);
 
-  useEffect(() => {
-    if (!user) return;
+useEffect(() => {
+  if (!user) return;
 
-    async function loadStats() {
-      try {
-        const res = await fetch("/api/staff-stats");
-        const data = await res.json();
+  async function loadStats() {
+    try {
+      const res = await fetch("/api/staff-stats");
+      const data = await res.json();
 
-        setStats({
-          totalCustomers: data.total_customers ?? 0,
-          totalStamps: data.total_stamps ?? 0,
-          outstandingRewards: data.outstanding_rewards ?? 0,
-          totalRedemptions: data.total_redemptions ?? 0,
-          totalRevenue: data.total_revenue ?? 0,
-          revenueBreakdown: data.revenue_breakdown || {
-            daily: 0,
-            weekly: 0,
-            monthly: 0,
-          },
-          topRedeemedDrinks: data.top_redeemed_drinks || [],
-          topCustomersByValue: data.top_customers_by_value || [],
-        });
-      } catch (err) {
-        console.error("Dashboard stats error:", err.message);
-      }
+      setStats({
+        totalCustomers: data.total_customers ?? 0,
+        totalStamps: data.total_stamps ?? 0,
+        outstandingRewards: data.outstanding_rewards ?? 0,
+        totalRedemptions: data.total_redemptions ?? 0,
+        totalRevenue: data.total_revenue ?? 0,
+        revenueBreakdown: data.revenue_breakdown || {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+        },
+        topRedeemedDrinks: data.top_redeemed_drinks || [],
+        topCustomersByValue: data.top_customers_by_value || [],
+        sustainability_breakdown: data.sustainability_breakdown || {
+          reusable_count: 0,
+          non_reusable_count: 0,
+          reusable_percentage: 0,
+        },
+      });
+    } catch (err) {
+      console.error("Dashboard stats error:", err.message);
     }
+  }
 
-    loadStats();
-  }, [user]);
+  loadStats();
+}, [user]);
+
 
   if (isLoading) {
     return <p>Checking staff session...</p>;
@@ -164,7 +176,21 @@ function StaffDashboard({ initialUser }) {
             <span>Monthly £{stats.revenueBreakdown?.monthly ?? 0}</span>
           </div>
         </div>
+
+{/* Sustainability breakdown */}
+<div className="bg-white p-6 rounded-xl shadow">
+  <h2 className="text-lg font-bold mb-2">Sustainability Breakdown</h2>
+  <p className="text-2xl font-bold text-green-600">
+    {stats.sustainability_breakdown?.reusable_percentage ?? 0}% reusable
+  </p>
+  <div className="flex justify-between text-sm text-gray-500 mt-4">
+    <span>Reusable: {stats.sustainability_breakdown?.reusable_count ?? 0}</span>
+    <span>Disposable: {stats.sustainability_breakdown?.non_reusable_count ?? 0}</span>
+  </div>
+</div>
+
       </div>
+      
 
       <StaffBottomNav />
     </div>
