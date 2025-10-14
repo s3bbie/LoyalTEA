@@ -21,7 +21,7 @@ export default function Document() {
 
   {/* ✅ PWA manifest + theme color */}
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#EC008C" />
+  <meta name="theme-color" content="#9E1C60" />
 
 
 </Head>
