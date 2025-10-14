@@ -90,37 +90,41 @@ function Home({ initialUser }) {
   const info = widgets.find((w) => w.slot === "info");
   const button = widgets.find((w) => w.slot === "button");
 
-  // 🎠 Auto-scroll banners every 4s
-  useEffect(() => {
-    const container = document.getElementById("bannersCarousel");
-    if (!container) return;
+// 🎠 Auto-scroll banners every 4s
+useEffect(() => {
+  const container = document.getElementById("bannersCarousel");
+  if (!container) return;
 
-    let index = 0;
-    let paused = false;
-    let pauseTimeout;
+  const track = container.querySelector(".banners-track");
+  const slides = container.querySelectorAll(".banner-slide");
+  if (!slides.length || !track) return;
 
-    const slides = container.querySelectorAll(".banner-slide");
-    if (!slides.length) return;
+  let index = 0;
+  let paused = false;
+  let pauseTimeout;
 
-    const handleUserScroll = () => {
-      paused = true;
-      clearTimeout(pauseTimeout);
-      pauseTimeout = setTimeout(() => (paused = false), 5000); // resume after 5s idle
-    };
+  const handleUserScroll = () => {
+    paused = true;
+    clearTimeout(pauseTimeout);
+    pauseTimeout = setTimeout(() => (paused = false), 5000);
+  };
 
-    container.addEventListener("scroll", handleUserScroll);
+  container.addEventListener("touchstart", handleUserScroll);
+  container.addEventListener("mousedown", handleUserScroll);
 
-    const interval = setInterval(() => {
-      if (paused || !slides.length) return;
-      index = (index + 1) % slides.length;
-      slides[index].scrollIntoView({ behavior: "smooth", inline: "center" });
-    }, 4000);
+  const interval = setInterval(() => {
+    if (paused) return;
+    index = (index + 1) % slides.length;
+    track.style.transform = `translateX(-${index * 100}%)`;
+  }, 4000);
 
-    return () => {
-      clearInterval(interval);
-      container.removeEventListener("scroll", handleUserScroll);
-    };
-  }, [banners]);
+  return () => {
+    clearInterval(interval);
+    container.removeEventListener("touchstart", handleUserScroll);
+    container.removeEventListener("mousedown", handleUserScroll);
+  };
+}, [banners]);
+
 
   // 🔄 Fetch user data & stamps
   useEffect(() => {
