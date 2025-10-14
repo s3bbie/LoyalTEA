@@ -335,3 +335,7 @@ body, html {
 .bg-brandPink {
   background-color:#9E1C60;
 }
+
+.border {
+  color: black;
+}

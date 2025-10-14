@@ -1,214 +1,337 @@
-// pages/staff/dashboard.js
+// pages/staff/home.js
 import { useEffect, useState } from "react";
-import StaffBottomNav from "../../components/StaffBottomNav";
-import { Gift, Ticket, Users, Star } from "lucide-react";
-import { useSessionContext } from "@supabase/auth-helpers-react";
-import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/utils/authClient";
 import { useRouter } from "next/router";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import StaffBottomNav from "../../components/StaffBottomNav";
+import { Save, Loader2, Upload, Trash2, Plus } from "lucide-react";
 
-function StaffDashboard({ initialUser }) {
-  const { session, isLoading } = useSessionContext();
+export default function StaffHome() {
   const router = useRouter();
-  const user = session?.user || initialUser;
+  const { session, isLoading } = useSessionContext();
+  const [widgets, setWidgets] = useState({});
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-const [stats, setStats] = useState({
-  totalStamps: 0,
-  totalRedemptions: 0,
-  totalCustomers: 0,
-  outstandingRewards: 0,
-  totalRevenue: 0,
-  revenueBreakdown: { daily: 0, weekly: 0, monthly: 0 },
-  topRedeemedDrinks: [],
-  topCustomersByValue: [],
-  sustainability_breakdown: {
-    reusable_count: 0,
-    non_reusable_count: 0,
-    reusable_percentage: 0,
-  },
-});
-
-
-  // 🚦 redirect only after hydration if no session
+  // 🚦 Redirect if not logged in
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace("/staff/login");
+    if (!isLoading && !session) router.replace("/staff/login");
+  }, [isLoading, session, router]);
+
+  // 🔐 Get staff role
+  useEffect(() => {
+    async function fetchRole() {
+      if (!session?.user?.id) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      if (error) console.error("Role fetch error:", error);
+      setRole(data?.role || "staff");
     }
-  }, [isLoading, user, router]);
+    fetchRole();
+  }, [session]);
 
-useEffect(() => {
-  if (!user) return;
+  // 🧩 Load widgets
+  useEffect(() => {
+    async function loadWidgets() {
+      const { data, error } = await supabase.from("user_widgets").select("*");
+      if (error) console.error("Widget load error:", error);
 
-  async function loadStats() {
-    try {
-      const res = await fetch("/api/staff-stats");
-      const data = await res.json();
-
-      setStats({
-        totalCustomers: data.total_customers ?? 0,
-        totalStamps: data.total_stamps ?? 0,
-        outstandingRewards: data.outstanding_rewards ?? 0,
-        totalRedemptions: data.total_redemptions ?? 0,
-        totalRevenue: data.total_revenue ?? 0,
-        revenueBreakdown: data.revenue_breakdown || {
-          daily: 0,
-          weekly: 0,
-          monthly: 0,
-        },
-        topRedeemedDrinks: data.top_redeemed_drinks || [],
-        topCustomersByValue: data.top_customers_by_value || [],
-        sustainability_breakdown: data.sustainability_breakdown || {
-          reusable_count: 0,
-          non_reusable_count: 0,
-          reusable_percentage: 0,
-        },
-      });
-    } catch (err) {
-      console.error("Dashboard stats error:", err.message);
+      const map = {};
+      data?.forEach((w) => (map[w.slot] = w));
+      setWidgets(map);
+      setLoading(false);
     }
+    loadWidgets();
+  }, []);
+
+  // 💾 Save widget
+  async function updateWidget(slot, updates) {
+    setSaving(true);
+    const { error } = await supabase
+      .from("user_widgets")
+      .update(updates)
+      .eq("slot", slot);
+    if (error) console.error(error);
+    else setWidgets((prev) => ({ ...prev, [slot]: { ...prev[slot], ...updates } }));
+    setSaving(false);
   }
 
-  loadStats();
-}, [user]);
-
-
-  if (isLoading) {
-    return <p>Checking staff session...</p>;
+  // 🗑 Delete widget section
+  async function deleteWidget(slot) {
+    if (!confirm("Are you sure you want to delete this section?")) return;
+    const { error } = await supabase.from("user_widgets").delete().eq("slot", slot);
+    if (error) return alert("❌ Delete failed");
+    setWidgets((prev) => {
+      const copy = { ...prev };
+      delete copy[slot];
+      return copy;
+    });
+    alert("✅ Section deleted!");
   }
 
-  if (!user) {
-    return null; // router will redirect
+  // ➕ Recreate widget section
+  async function recreateWidget(slot, defaults) {
+    const { data, error } = await supabase
+      .from("user_widgets")
+      .insert([{ slot, ...defaults }])
+      .select()
+      .single();
+    if (error) return alert("Failed to recreate section.");
+    setWidgets((prev) => ({ ...prev, [slot]: data }));
   }
 
-  const cards = [
-    {
-      title: "Total Redemptions",
-      value: stats.totalRedemptions,
-      icon: <Gift className="w-6 h-6" />,
-      bg: "bg-pink-500",
-    },
-    {
-      title: "Total Stamps",
-      value: stats.totalStamps,
-      icon: <Ticket className="w-6 h-6" />,
-      bg: "bg-blue-500",
-    },
-    {
-      title: "Total Customers",
-      value: stats.totalCustomers,
-      icon: <Users className="w-6 h-6" />,
-      bg: "bg-green-500",
-    },
-    {
-      title: "Outstanding Rewards",
-      value: stats.outstandingRewards,
-      icon: <Star className="w-6 h-6" />,
-      bg: "bg-yellow-500",
-    },
-  ];
+  if (loading) return <p className="p-6">Loading editor...</p>;
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6 pb-24">
-      <h1 className="text-2xl font-bold mb-6">Staff Dashboard</h1>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        {cards.map((card) => (
-          <div
-            key={card.title}
-            className="p-6 rounded-xl bg-white shadow flex items-center justify-between"
+  const SectionBox = ({ title, slot, children, defaults }) => (
+    <section className="bg-white p-6 rounded-2xl shadow mb-8 border">
+      <h2 className="text-xl font-semibold mb-3">{title}</h2>
+      {widgets[slot] ? (
+        <>
+          {children}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => deleteWidget(slot)}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" /> Delete Section
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="text-center text-gray-500 py-6">
+          <p>This section is currently deleted.</p>
+          <button
+            onClick={() => recreateWidget(slot, defaults)}
+            className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto"
           >
-            <div>
-              <p className="text-sm font-medium text-gray-500">{card.title}</p>
-              <h2 className="text-3xl font-bold text-gray-800">{card.value}</h2>
-            </div>
-            <div className={`p-3 rounded-full ${card.bg} text-white`}>
-              {card.icon}
+            <Plus className="w-4 h-4" /> Recreate Section
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
+  // 🧱 Banner list component
+  function BannerList() {
+    const [banners, setBanners] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      async function loadBanners() {
+        const { data, error } = await supabase
+          .from("user_widgets")
+          .select("*")
+          .eq("slot", "banner")
+          .order("created_at", { ascending: false });
+        if (error) console.error(error);
+        setBanners(data || []);
+        setLoading(false);
+      }
+      loadBanners();
+    }, []);
+
+    async function toggleActive(id, current) {
+      const { error } = await supabase
+        .from("user_widgets")
+        .update({ is_active: !current })
+        .eq("id", id);
+      if (!error)
+        setBanners((prev) =>
+          prev.map((b) => (b.id === id ? { ...b, is_active: !current } : b))
+        );
+    }
+
+    async function deleteBanner(id) {
+      if (!confirm("Delete this banner?")) return;
+      const { error } = await supabase.from("user_widgets").delete().eq("id", id);
+      if (!error) setBanners((prev) => prev.filter((b) => b.id !== id));
+    }
+
+    if (loading) return <p>Loading banners...</p>;
+
+    return (
+      <div className="space-y-4">
+        {banners.length === 0 && (
+          <p className="text-gray-500 text-center py-4">No banners added yet.</p>
+        )}
+        {banners.map((b) => (
+          <div key={b.id} className="border rounded-lg p-3 bg-gray-50">
+            <img
+              src={b.image_url}
+              alt={b.title}
+              className="w-full h-32 object-cover rounded-lg mb-2"
+            />
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => toggleActive(b.id, b.is_active)}
+                className={`px-3 py-1 rounded-lg text-white ${
+                  b.is_active ? "bg-green-600 hover:bg-green-700" : "bg-gray-400"
+                }`}
+              >
+                {b.is_active ? "Active" : "Inactive"}
+              </button>
+              <button
+                onClick={() => deleteBanner(b.id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
             </div>
           </div>
         ))}
       </div>
+    );
+  }
 
-      {/* Second row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Top Redeemed Drinks</h2>
-          {stats.topRedeemedDrinks?.length > 0 ? (
-            <ul className="text-sm text-gray-700">
-              {stats.topRedeemedDrinks.map((drink, idx) => (
-                <li key={idx} className="flex justify-between">
-                  <span>{drink.reward_name}</span>
-                  <span>{drink.redeemed_count}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-600 text-sm">No data yet.</p>
-          )}
-        </div>
+  // 📤 Upload new banner
+  async function handleNewBannerUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const path = `uploads/${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage
+      .from("user-assets")
+      .upload(path, file, { upsert: true });
+    if (error) return alert("❌ Upload failed");
 
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Top Customers by Value</h2>
-          {stats.topCustomersByValue?.length > 0 ? (
-            <ul className="text-sm text-gray-700">
-              {stats.topCustomersByValue.map((cust, idx) => (
-                <li key={idx} className="flex justify-between">
-                  <span>{cust.username}</span>
-                  <span>£{cust.total_value}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-600 text-sm">No data yet.</p>
-          )}
-        </div>
-      </div>
+    const { data: publicData } = supabase.storage
+      .from("user-assets")
+      .getPublicUrl(path);
 
-      {/* Third row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-bold mb-2">Total Revenue</h2>
-          <p className="text-2xl font-bold text-green-600">
-            £{stats.totalRevenue}
-          </p>
-          <div className="flex justify-between text-sm text-gray-500 mt-4">
-            <span>Daily £{stats.revenueBreakdown?.daily ?? 0}</span>
-            <span>Weekly £{stats.revenueBreakdown?.weekly ?? 0}</span>
-            <span>Monthly £{stats.revenueBreakdown?.monthly ?? 0}</span>
-          </div>
-        </div>
+    const { error: insertError } = await supabase.from("user_widgets").insert([
+      {
+        slot: "banner",
+        type: "image",
+        image_url: publicData.publicUrl,
+        title: "New Banner",
+        is_active: true,
+      },
+    ]);
+    if (insertError) alert("❌ Failed to add banner");
+    else alert("✅ Banner added!");
+    window.location.reload();
+  }
 
-{/* Sustainability breakdown */}
-<div className="bg-white p-6 rounded-xl shadow">
-  <h2 className="text-lg font-bold mb-2">Sustainability Breakdown</h2>
-  <p className="text-2xl font-bold text-green-600">
-    {stats.sustainability_breakdown?.reusable_percentage ?? 0}% reusable
-  </p>
-  <div className="flex justify-between text-sm text-gray-500 mt-4">
-    <span>Reusable: {stats.sustainability_breakdown?.reusable_count ?? 0}</span>
-    <span>Disposable: {stats.sustainability_breakdown?.non_reusable_count ?? 0}</span>
-  </div>
-</div>
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 pb-24">
+      <h1 className="text-3xl font-bold mb-6">🧱 Homepage Editor</h1>
 
-      </div>
-      
+      {/* 🏞️ Banner Manager */}
+      <section className="bg-white p-6 rounded-2xl shadow mb-8 border">
+        <h2 className="text-xl font-semibold mb-4">🏞️ Banners</h2>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleNewBannerUpload}
+          className="mb-4 border p-2 rounded-lg"
+        />
+        <BannerList />
+      </section>
+
+      {/* 📰 Announcement */}
+      <SectionBox
+        title="📰 Announcement"
+        slot="announcement"
+        defaults={{ type: "announcement", title: "Announcement", content: "" }}
+      >
+        <textarea
+          value={widgets.announcement?.content || ""}
+          onChange={(e) =>
+            setWidgets((prev) => ({
+              ...prev,
+              announcement: { ...prev.announcement, content: e.target.value },
+            }))
+          }
+          className="border rounded-lg p-3 w-full mb-3"
+          rows={3}
+        />
+        <button
+          onClick={() =>
+            updateWidget("announcement", {
+              content: widgets.announcement?.content,
+            })
+          }
+          className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
+          Save
+        </button>
+      </SectionBox>
+
+      {/* 💬 Info Box */}
+      <SectionBox
+        title="💬 Information Box"
+        slot="info"
+        defaults={{ type: "text", title: "Info", content: "" }}
+      >
+        <textarea
+          value={widgets.info?.content || ""}
+          onChange={(e) =>
+            setWidgets((prev) => ({
+              ...prev,
+              info: { ...prev.info, content: e.target.value },
+            }))
+          }
+          className="border rounded-lg p-3 w-full mb-3"
+          rows={4}
+        />
+        <button
+          onClick={() => updateWidget("info", { content: widgets.info?.content })}
+          className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
+          Save
+        </button>
+      </SectionBox>
+
+      {/* 🔗 Button Link */}
+      <SectionBox
+        title="🔗 Button Link"
+        slot="button"
+        defaults={{ type: "button", title: "View Rewards", link: "/rewards" }}
+      >
+        <input
+          type="text"
+          placeholder="Button text"
+          value={widgets.button?.title || ""}
+          onChange={(e) =>
+            setWidgets((prev) => ({
+              ...prev,
+              button: { ...prev.button, title: e.target.value },
+            }))
+          }
+          className="border rounded-lg p-2 w-full mb-3"
+        />
+        <input
+          type="text"
+          placeholder="Button link (e.g. /rewards)"
+          value={widgets.button?.link || ""}
+          onChange={(e) =>
+            setWidgets((prev) => ({
+              ...prev,
+              button: { ...prev.button, link: e.target.value },
+            }))
+          }
+          className="border rounded-lg p-2 w-full mb-3"
+        />
+        <button
+          onClick={() =>
+            updateWidget("button", {
+              title: widgets.button?.title,
+              link: widgets.button?.link,
+            })
+          }
+          className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
+          Save
+        </button>
+      </SectionBox>
 
       <StaffBottomNav />
     </div>
   );
 }
-
-// ✅ SSR — don’t hard redirect if no session
-export async function getServerSideProps(ctx) {
-  const supabase = createServerSupabaseClient(ctx);
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  return {
-    props: {
-      initialUser: session ? session.user : null,
-    },
-  };
-}
-
-export default StaffDashboard;

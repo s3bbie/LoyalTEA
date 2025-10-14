@@ -1,6 +1,19 @@
 // pages/staff/reports.js
 import { useEffect, useState } from "react";
 import StaffBottomNav from "../../components/StaffBottomNav";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function StaffReports() {
   const [reports, setReports] = useState(null);
@@ -31,17 +44,43 @@ export default function StaffReports() {
 
   const insights = reports.insights || {};
 
+  // fallback placeholder data for charts (so page doesn’t break if API has no data)
+  const topDrinks = insights.top_drinks || [
+    { name: "Cafe Mocha", count: 12 },
+    { name: "Latte", count: 9 },
+    { name: "English Breakfast", count: 6 },
+  ];
+
+  const stampsTrend = insights.stamps_over_time || [
+    { date: "Oct 1", avg: 2.5 },
+    { date: "Oct 8", avg: 3.0 },
+    { date: "Oct 15", avg: 3.4 },
+  ];
+
+  const cupBreakdown = insights.cup_breakdown || {
+    reusable: 45,
+    non_reusable: 20,
+  };
+
+  const revenueTrend = insights.revenue_over_time || [
+    { week: "W1", revenue: 6.2 },
+    { week: "W2", revenue: 9.1 },
+    { week: "W3", revenue: 4.5 },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold mb-4 sm:mb-0">Staff Reports</h1>
+        <h1 className="text-2xl font-bold mb-4 sm:mb-0 text-gray-800">
+          Staff Reports
+        </h1>
 
         <div className="flex items-center gap-3">
           <select
             value={selectedDays}
             onChange={(e) => setSelectedDays(e.target.value)}
-            className="border rounded-lg p-2"
+            className="border rounded-lg p-2 bg-white shadow-sm text-gray-700"
           >
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
@@ -58,81 +97,148 @@ export default function StaffReports() {
         </div>
       </div>
 
-      {/* Overview */}
+      {/* Overview KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <MetricCard
           title="👥 Total Members"
           value={reports.total_members}
           subtitle={`+${reports.new_members_week} new this week`}
-          color="bg-gradient-to-r from-pink-500 to-pink-400"
+          color="bg-pink-200"
         />
         <MetricCard
           title="🔥 Active Members"
           value={reports.active_members}
           subtitle="(last 30 days)"
-          color="bg-gradient-to-r from-orange-400 to-orange-300"
+          color="bg-orange-200"
         />
         <MetricCard
           title="🎟️ Redemption Rate"
           value={`${reports.redemption_rate}%`}
           subtitle="of total stamps"
-          color="bg-gradient-to-r from-green-400 to-emerald-300"
+          color="bg-green-200"
         />
         <MetricCard
           title="💷 Total Revenue"
           value={`£${insights.total_revenue || "0.00"}`}
           subtitle="via rewards"
-          color="bg-gradient-to-r from-blue-500 to-blue-400"
+          color="bg-blue-200"
         />
       </div>
 
-      {/* Insights Section */}
-      <div className="bg-white rounded-2xl shadow p-8 space-y-6">
-        <h2 className="text-xl font-semibold mb-4">Key Insights</h2>
+      {/* Key Insights with Charts */}
+      <div className="mb-10">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Key Insights
+        </h2>
 
-        <InsightItem
-          emoji="☕"
-          label="Most Redeemed Drink"
-          value={insights.most_redeemed_drink || "No data"}
-          desc="The drink customers love the most!"
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Most Redeemed Drinks */}
+          <InsightBox title="☕ Most Redeemed Drinks" color="pink">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={topDrinks}>
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis hide />
+                <Tooltip />
+                <Bar dataKey="count" fill="#ec4899" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </InsightBox>
 
-        <InsightItem
-          emoji="⭐"
-          label="Avg Stamps per Active User"
-          value={insights.avg_stamps_per_active || "0"}
-          desc="Average number of stamps earned by active members."
-        />
+          {/* Avg Stamps Trend */}
+          <InsightBox title="⭐ Avg Stamps per Active User" color="yellow">
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={stampsTrend}>
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis hide />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="#facc15"
+                  strokeWidth={3}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </InsightBox>
 
-        <InsightItem
-          emoji="🌱"
-          label="Total CO₂ Saved"
-          value={`${insights.co2_saved_kg || 0} kg`}
-          desc="Based on reusable cup usage data."
-        />
+          {/* CO₂ Saved Breakdown */}
+          <InsightBox title="🌱 CO₂ Saved Breakdown" color="green">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Reusable", value: cupBreakdown.reusable },
+                    { name: "Disposable", value: cupBreakdown.non_reusable },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={70}
+                  label
+                  dataKey="value"
+                >
+                  <Cell fill="#10b981" />
+                  <Cell fill="#f87171" />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </InsightBox>
 
-        <InsightItem
-          emoji="👑"
-          label="Top Customers"
-          value={
-            reports.high_value_customers?.length
-              ? reports.high_value_customers
-                  .slice(0, 3)
-                  .map((c) => c.username || c.email || "Anonymous")
-                  .join(", ")
-              : "No data"
-          }
-          desc="Your highest-spending loyalty members."
-        />
+          {/* Revenue by Week */}
+          <InsightBox title="💷 Revenue by Week" color="blue">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={revenueTrend}>
+                <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+                <YAxis hide />
+                <Tooltip />
+                <Bar dataKey="revenue" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </InsightBox>
+        </div>
+      </div>
+
+      {/* Top Customers */}
+      <div className="mt-10 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800">
+          👑 <span>Top 5 Customers</span>
+        </h3>
+        {reports.high_value_customers?.length ? (
+          <ul className="divide-y divide-gray-100">
+            {reports.high_value_customers.slice(0, 5).map((c, i) => (
+              <li
+                key={i}
+                className="py-3 flex justify-between items-center hover:bg-gray-50 rounded-lg px-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-medium">
+                    {(c.username || c.email || "?")[0].toUpperCase()}
+                  </div>
+                  <span className="text-gray-700 font-medium">
+                    {c.username || c.email || "Anonymous"}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {c.total_spent ? `£${c.total_spent.toFixed(2)}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-sm">No customer data available.</p>
+        )}
       </div>
 
       {/* Growth Summary */}
-      <div className="mt-10 bg-gradient-to-r from-pink-600 to-pink-500 text-white rounded-2xl p-8 shadow-lg">
-        <h2 className="text-xl font-semibold mb-3">📈 Growth Summary</h2>
-        <p className="text-sm opacity-90 mb-3">
+      <div className="mt-10 bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
+        <h2 className="text-xl font-semibold mb-3 text-gray-800">
+          📈 Growth Summary
+        </h2>
+        <p className="text-sm text-gray-500 mb-3">
           Here’s how LoyalTEA has performed in the last {selectedDays} days:
         </p>
-        <ul className="space-y-2 text-base">
+        <ul className="space-y-2 text-base text-gray-700">
           <li>👥 <b>{reports.total_members}</b> total members</li>
           <li>🔥 <b>{reports.active_members}</b> active this period</li>
           <li>🎁 <b>{reports.redemption_rate}%</b> redemption activity</li>
@@ -145,29 +251,43 @@ export default function StaffReports() {
   );
 }
 
-// Components
+/* ---------- Components ---------- */
+
 function MetricCard({ title, value, subtitle, color }) {
   return (
-    <div
-      className={`${color} text-white p-6 rounded-2xl shadow-md transform hover:scale-[1.02] transition-all`}
-    >
-      <h3 className="text-sm opacity-90 mb-1">{title}</h3>
-      <h2 className="text-3xl font-bold mb-1">{value}</h2>
-      <p className="text-sm opacity-80">{subtitle}</p>
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+      <h3 className="text-sm text-gray-500 mb-1">{title}</h3>
+      <h2 className="text-3xl font-bold text-gray-800 mb-1">{value}</h2>
+      <p className="text-sm text-gray-400">{subtitle}</p>
+      <div className={`mt-2 h-1 w-1/3 rounded-full ${color}`}></div>
     </div>
   );
 }
 
-function InsightItem({ emoji, label, value, desc }) {
+function InsightBox({ title, color, children }) {
+  const colorMap = {
+    pink: "from-pink-50 border-pink-100",
+    yellow: "from-yellow-50 border-yellow-100",
+    green: "from-green-50 border-green-100",
+    blue: "from-blue-50 border-blue-100",
+  };
   return (
-    <div className="flex items-start justify-between border-b border-gray-100 pb-4">
-      <div>
-        <h3 className="font-semibold text-gray-800">
-          {emoji} {label}
-        </h3>
-        <p className="text-sm text-gray-500">{desc}</p>
-      </div>
-      <span className="text-lg font-bold text-gray-800">{value}</span>
+    <div
+      className={`bg-gradient-to-br ${colorMap[color]} to-white border rounded-2xl p-6 shadow-sm`}
+    >
+      <h3
+        className={`text-md font-semibold mb-4 ${
+          {
+            pink: "text-pink-600",
+            yellow: "text-yellow-600",
+            green: "text-green-600",
+            blue: "text-blue-600",
+          }[color]
+        }`}
+      >
+        {title}
+      </h3>
+      {children}
     </div>
   );
 }

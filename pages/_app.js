@@ -25,7 +25,6 @@ export default function App({ Component, pageProps }) {
 
   // Pages where no nav should show at all
   const hideNavOn = ["/", "/register", "/verify-email", "/login", "/staff/login"];
-
   const isStaffPage = router.pathname.startsWith("/staff");
   const showNav = !hideNavOn.includes(router.pathname);
 
@@ -44,7 +43,10 @@ export default function App({ Component, pageProps }) {
   }
 
   return (
-    <SessionContextProvider supabaseClient={supabase}>
+    <SessionContextProvider
+      supabaseClient={supabase}
+      initialSession={pageProps.initialSession || null}
+    >
       <Component {...pageProps} />
       {showNav && (isStaffPage ? <StaffBottomNav /> : <BottomNav />)}
       <Analytics />
@@ -53,6 +55,4 @@ export default function App({ Component, pageProps }) {
   );
 }
 
-export const config = {
-  runtime: "nodejs",
-};
+export const config = { runtime: "nodejs" };
